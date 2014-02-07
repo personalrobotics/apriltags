@@ -1,0 +1,2 @@
+/usr/bin/ar cr ../libapriltags.a  CMakeFiles/apriltags.dir/CameraUtil.cpp.o CMakeFiles/apriltags.dir/DebugImage.cpp.o CMakeFiles/apriltags.dir/Geometry.cpp.o CMakeFiles/apriltags.dir/GrayModel.cpp.o CMakeFiles/apriltags.dir/MathUtil.cpp.o CMakeFiles/apriltags.dir/Refine.cpp.o CMakeFiles/apriltags.dir/TagDetector.cpp.o CMakeFiles/apriltags.dir/TagFamily.cpp.o CMakeFiles/apriltags.dir/TagFamilies.cpp.o CMakeFiles/apriltags.dir/UnionFindSimple.cpp.o
+/usr/bin/ranlib ../libapriltags.a

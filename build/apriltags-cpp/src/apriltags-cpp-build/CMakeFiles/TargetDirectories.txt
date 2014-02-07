@@ -1,0 +1,6 @@
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/apriltags.dir
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/camtest.dir
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/gltest.dir
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/maketags.dir
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/quadtest.dir
+/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp-build/src/CMakeFiles/tagtest.dir
