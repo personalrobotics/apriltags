@@ -1,1 +1,0 @@
-cmd='/usr/bin/cmake;-GUnix Makefiles;/homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags/build/apriltags-cpp/src/apriltags-cpp'

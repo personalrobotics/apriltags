@@ -1,3 +1,0 @@
-repository='https://github.com/swatbotics/apriltags-cpp.git'
-module=''
-tag='master'
