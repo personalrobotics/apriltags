@@ -33,42 +33,37 @@ class AprilTagsNode {
     AprilTags::TagDetector* tag_detector_;
     AprilTags::TagCodes tag_codes_;
     
+    int viewer_;
+    string tag_family_name_;
     boost::unordered_map<size_t, double> tag_sizes_;
     double default_tag_size_;
     
-    int enabled;
+    int enabled_;
 
 public:
-    AprilTagsNode() : image_(node_), tag_codes_(AprilTags::tagCodes36h11){
-        ros::NodeHandle param_node_handle("~");
-        string camera_topic_name;
-        string output_marker_list_topic_name;
-        string tag_family_name;
-        string enable_service_name;
+    AprilTagsNode() : node_("~"),
+                      image_(node_),
+                      tag_codes_(AprilTags::tagCodes36h11){
+        
+        string camera_topic_name = "/Image";
+        string output_marker_list_topic_name = "/Markers";
+        string enable_service_name = "/Enable";
         string tag_data;
         
         // Get Parameters
-        param_node_handle.param(
-                "camera_base_topic", camera_topic_name, string("/Image"));
-        param_node_handle.param(
-                "output_marker_list_topic_name", output_marker_list_topic_name,
-                string("/marker_transforms"));
-        param_node_handle.param(
-                "enable_service_name", enable_service_name,
-                string("/enable"));
-        param_node_handle.param(
-                "tag_family", tag_family_name, DEFAULT_TAG_FAMILY);
-        param_node_handle.param(
-                "tag_data", tag_data, string("{}"));
-        param_node_handle.param(
-                "default_tag_size", default_tag_size_, 0.165);
+        node_.param("/viewer", viewer_, 0);
+        node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
+        node_.param("/tag_data", tag_data, string(""));
+        node_.param("/default_tag_size", default_tag_size_, 0.165);
         
-        marker_publisher_ =
-                param_node_handle.advertise<visualization_msgs::MarkerArray>(
-                "marker_transform", 0);
-        
+        // Start the viewer if speficified
+        if(viewer_){
+            cvNamedWindow("AprilTags");
+            cvStartWindowThread();
+        }
+    
         // Tag Detector
-        SetTagCodeFromString(tag_family_name);
+        SetTagCodeFromString(tag_family_name_);
         tag_detector_ = new AprilTags::TagDetector(tag_codes_);
         
         // Publisher
@@ -80,29 +75,11 @@ public:
                 camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
         
         // Store Tag Sizes
-        stringstream tag_ss;
-        tag_ss << tag_data;
-        YAML::Parser parser(tag_ss);
-        YAML::Node doc;
-        parser.GetNextDocument(doc);
-        
-        for(YAML::Iterator field = doc.begin(); field != doc.end(); ++field){
-            size_t index;
-            field.first() >> index;
-            const YAML::Node& value = field.second();
-            for(YAML::Iterator sub_field = value.begin();
-                sub_field != value.end(); ++sub_field){
-                
-                string key;
-                sub_field.first() >> key;
-                if(key == "size"){
-                    sub_field.second() >> tag_sizes_[index];
-                }
-            }
-        }
+        StoreTagSizes(tag_data);
     }
     
     ~AprilTagsNode(){
+        cvDestroyWindow("AprilTags");
         delete tag_detector_;
     }
     
@@ -128,6 +105,35 @@ public:
         }
     }
     
+    void StoreTagSizes(string tag_data){
+        stringstream tag_ss;
+        tag_ss << tag_data;
+        YAML::Parser parser(tag_ss);
+        YAML::Node doc;
+        parser.GetNextDocument(doc);
+        
+        for(YAML::Iterator field = doc.begin(); field != doc.end(); ++field){
+            //string index_str;
+            //field.first() >> index_str;
+            //size_t index = atoi(index_str.c_str());
+            
+            int index;
+            field.first() >> index;
+            
+            const YAML::Node& value = field.second();
+            for(YAML::Iterator sub_field = value.begin();
+                    sub_field != value.end(); ++sub_field){
+                
+                string key;
+                sub_field.first() >> key;
+                
+                if(key == "size"){
+                    sub_field.second() >> tag_sizes_[index];
+                }
+            }
+        }
+    }
+    
     void ImageCallback(
             const sensor_msgs::ImageConstPtr& msg,
             const sensor_msgs::CameraInfoConstPtr& camera_info)
@@ -148,7 +154,6 @@ public:
         vector<AprilTags::TagDetection> detections =
                 tag_detector_->extractTags(subscribed_gray);
         
-        //cout << "Intrinsics" << (*camera_info).K[0] << " " << (*camera_info).K[4] << endl;
         //cout << "Found " << detections.size() << endl;
         
         visualization_msgs::MarkerArray marker_transforms;
@@ -170,9 +175,6 @@ public:
                     (*camera_info).K[2], (*camera_info).K[5]);
             Eigen::Matrix3d R = pose.block<3,3>(0,0);
             Eigen::Quaternion<double> q(R);
-            
-            cout << detections[i].id << endl;
-            cout << pose << endl;
             
             visualization_msgs::Marker marker_transform;
             marker_transform.header.frame_id = "base_link";
@@ -200,21 +202,17 @@ public:
         
         marker_publisher_.publish(marker_transforms);
         
-        //cvShowImage("AprilTags", bridge.imgMsgToCv(msg, "bgr8"));
-        cv::imshow("AprilTags", subscribed_image);
+        if(viewer_){
+            cv::imshow("AprilTags", subscribed_image);
+        }
     }
 };
 
 int main(int argc, char **argv){
     ros::init(argc, argv, "apriltags");
     
-    cvNamedWindow("AprilTags");
-    cvStartWindowThread();
-    
     AprilTagsNode detector;
     ros::spin();
-    
-    cvDestroyWindow("AprilTags");
     
     return EXIT_SUCCESS;
 }
