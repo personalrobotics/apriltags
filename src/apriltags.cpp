@@ -37,6 +37,7 @@ class AprilTagsNode {
     string tag_family_name_;
     boost::unordered_map<size_t, double> tag_sizes_;
     double default_tag_size_;
+    string frame_;
     
     int enabled_;
 
@@ -55,6 +56,7 @@ public:
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
         node_.param("/tag_data", tag_data, string(""));
         node_.param("/default_tag_size", default_tag_size_, 0.165);
+        node_.param("/frame", frame_, string("/prosilica_cam"));
         
         // Start the viewer if speficified
         if(viewer_){
@@ -177,9 +179,9 @@ public:
             Eigen::Quaternion<double> q(R);
             
             visualization_msgs::Marker marker_transform;
-            marker_transform.header.frame_id = "base_link";
+            marker_transform.header.frame_id = frame_;
             marker_transform.header.stamp = ros::Time();
-            marker_transform.ns = "what_goes_here";
+            marker_transform.ns = "apriltags";
             marker_transform.id = detections[i].id;
             marker_transform.type = visualization_msgs::Marker::CUBE;
             marker_transform.action = visualization_msgs::Marker::ADD;
@@ -190,9 +192,9 @@ public:
             marker_transform.pose.orientation.y = q.y();
             marker_transform.pose.orientation.z = q.z();
             marker_transform.pose.orientation.w = q.w();
-            marker_transform.scale.x = 1.0;
-            marker_transform.scale.y = 1.0;
-            marker_transform.scale.z = 0.1;
+            marker_transform.scale.x = tag_size;
+            marker_transform.scale.y = tag_size;
+            marker_transform.scale.z = 0.05 * tag_size;
             marker_transform.color.r = 0.5;
             marker_transform.color.g = 0.5;
             marker_transform.color.b = 0.5;
