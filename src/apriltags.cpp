@@ -56,7 +56,7 @@ public:
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
         node_.param("/tag_data", tag_data, string(""));
         node_.param("/default_tag_size", default_tag_size_, 0.165);
-        node_.param("/frame", frame_, string("/prosilica_cam"));
+        node_.param("/tf_frame", frame_, string("/prosilica_cam"));
         
         // Start the viewer if speficified
         if(viewer_){
