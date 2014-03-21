@@ -33,11 +33,16 @@ class AprilTagsNode {
     AprilTags::TagDetector* tag_detector_;
     AprilTags::TagCodes tag_codes_;
     
+    sensor_msgs::CameraInfo camera_info_;
+    
     int viewer_;
     string tag_family_name_;
     boost::unordered_map<size_t, double> tag_sizes_;
     double default_tag_size_;
     string frame_;
+    
+    ros::Subscriber image_subscriber;
+    ros::Subscriber info_subscriber;
     
     int enabled_;
 
@@ -46,7 +51,7 @@ public:
                       image_(node_),
                       tag_codes_(AprilTags::tagCodes36h11){
         
-        string camera_topic_name = /*"/Image";*/ "/head_kinect/rgb/image_color";
+        string camera_topic_name = "/Image"; // "/head_kinect/rgb/image_color";
         string output_marker_list_topic_name = "/marker_array";
         string enable_service_name = "/Enable";
         string tag_data;
@@ -77,8 +82,12 @@ public:
                 output_marker_list_topic_name, 0);
         
         // Subscriber
-        image_transport::CameraSubscriber sub = image_.subscribeCamera(
-                camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
+        //image_transport::CameraSubscriber sub = image_.subscribeCamera(
+        //        camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
+        
+        image_subscriber = node_.subscribe(camera_topic_name, 10, &AprilTagsNode::ImageCallback, this);
+        
+        info_subscriber = node_.subscribe("/camera_info", 10, &AprilTagsNode::InfoCallback, this);
         
         // Store Tag Sizes
         StoreTagSizes(tag_data);
@@ -140,10 +149,19 @@ public:
         }
     }
     
+    void InfoCallback(
+            const sensor_msgs::CameraInfoConstPtr& camera_info){
+        //std::cout << "INFO CALLBACK" << endl;
+        camera_info_ = (*camera_info);
+    }
+    
     void ImageCallback(
-            const sensor_msgs::ImageConstPtr& msg,
-            const sensor_msgs::CameraInfoConstPtr& camera_info)
+            const sensor_msgs::ImageConstPtr& msg )//,
+           // const sensor_msgs::CameraInfoConstPtr& camera_info)
     {
+        
+        //std::cout << "IMAGE CALLBACK" << endl;
+        
         sensor_msgs::CvBridge bridge;
         cv::Mat subscribed_image;
         try{
@@ -177,8 +195,8 @@ public:
             Eigen::Matrix4d pose;
             pose = detections[i].getRelativeTransform(
                     tag_size,
-                    (*camera_info).K[0], (*camera_info).K[4],
-                    (*camera_info).K[2], (*camera_info).K[5]);
+                    (camera_info_).K[0], (camera_info_).K[4],
+                    (camera_info_).K[2], (camera_info_).K[5]);
             Eigen::Matrix3d R = pose.block<3,3>(0,0);
             Eigen::Quaternion<double> q(R);
             
