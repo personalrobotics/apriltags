@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <image_transport/image_transport.h>
+//#include <image_transport/image_transport.h>
 #include <visualization_msgs/Marker.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -22,21 +22,25 @@
 
 using namespace std;
 
+#define SMALL_TAG_SIZE = 0.0358968; //0.0378968; // (~1.5" tags)
+#define MED_TAG_SIZE = 0.0630174; // (~2.5" tags)
+#define PAGE_TAG_SIZE = 0.165;
+
 #define DEFAULT_TAG_FAMILY string("36h11")
 
 class AprilTagsNode {
     ros::NodeHandle node_;
-    image_transport::ImageTransport image_;
+    //image_transport::ImageTransport image_;
     ros::Publisher marker_publisher_;
     ros::ServiceServer detect_enable_;
     
     AprilTags::TagDetector* tag_detector_;
     AprilTags::TagCodes tag_codes_;
+    string tag_family_name_;
     
     sensor_msgs::CameraInfo camera_info_;
     
     int viewer_;
-    string tag_family_name_;
     boost::unordered_map<size_t, double> tag_sizes_;
     double default_tag_size_;
     string frame_;
@@ -51,21 +55,18 @@ public:
                       image_(node_),
                       tag_codes_(AprilTags::tagCodes36h11){
         
-        string camera_topic_name = "/Image"; // "/head_kinect/rgb/image_color";
+        string camera_topic_name = "/Image";
         string output_marker_list_topic_name = "/marker_array";
         string enable_service_name = "/Enable";
         string tag_data;
         
         // Get Parameters
-        node_.param("/viewer", viewer_, 1);
+        node_.param("/viewer", viewer_, 0);
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
         node_.param("/tag_data", tag_data, string(""));
         
-        double small_tag_size = 0.0358968; //0.0378968; // (~1.5" tags)
-        double med_tag_size = 0.0630174; // (~2.5" tags)
-        double page_tag_size = 0.165;
-        node_.param("/default_tag_size", default_tag_size_, med_tag_size);
-        node_.param("/tf_frame", frame_, /*string("/prosilica_cam"));*/ string("/head_kinect_rgb_frame"));
+        node_.param("/default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
+        node_.param("/tf_frame", frame_, string("/head_kinect_rgb_frame"));
         
         // Start the viewer if speficified
         if(viewer_){
@@ -151,7 +152,6 @@ public:
     
     void InfoCallback(
             const sensor_msgs::CameraInfoConstPtr& camera_info){
-        //std::cout << "INFO CALLBACK" << endl;
         camera_info_ = (*camera_info);
     }
     
@@ -159,8 +159,6 @@ public:
             const sensor_msgs::ImageConstPtr& msg )//,
            // const sensor_msgs::CameraInfoConstPtr& camera_info)
     {
-        
-        //std::cout << "IMAGE CALLBACK" << endl;
         
         sensor_msgs::CvBridge bridge;
         cv::Mat subscribed_image;
@@ -178,8 +176,6 @@ public:
         vector<AprilTags::TagDetection> detections =
                 tag_detector_->extractTags(subscribed_gray);
         
-        //cout << "Found " << detections.size() << endl;
-        
         visualization_msgs::MarkerArray marker_transforms;
         
         for(unsigned int i = 0; i < detections.size(); ++i){
@@ -191,7 +187,10 @@ public:
                 tag_size = (*tag_size_it).second; 
             }
             
-            detections[i].draw(subscribed_image);
+            if(viewer_){
+                detections[i].draw(subscribed_image);
+            }
+            
             Eigen::Matrix4d pose;
             pose = detections[i].getRelativeTransform(
                     tag_size,
