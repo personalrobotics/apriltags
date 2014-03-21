@@ -47,15 +47,19 @@ public:
                       tag_codes_(AprilTags::tagCodes36h11){
         
         string camera_topic_name = "/Image";
-        string output_marker_list_topic_name = "/Markers";
+        string output_marker_list_topic_name = "/marker_array";
         string enable_service_name = "/Enable";
         string tag_data;
         
         // Get Parameters
-        node_.param("/viewer", viewer_, 0);
+        node_.param("/viewer", viewer_, 1);
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
         node_.param("/tag_data", tag_data, string(""));
-        node_.param("/default_tag_size", default_tag_size_, 0.165);
+        
+        double small_tag_size = 0.0378968; // (~1.5" tags)
+        double med_tag_size = 0.0630174; // (~2.5" tags)
+        double page_tag_size = 0.165;
+        node_.param("/default_tag_size", default_tag_size_, med_tag_size);
         node_.param("/tf_frame", frame_, string("/prosilica_cam"));
         
         // Start the viewer if speficified
@@ -180,8 +184,10 @@ public:
             
             visualization_msgs::Marker marker_transform;
             marker_transform.header.frame_id = frame_;
-            marker_transform.header.stamp = ros::Time();
-            marker_transform.ns = "apriltags";
+            marker_transform.header.stamp = ros::Time::now();
+            stringstream convert;
+            convert << "tag" << detections[i].id;
+            marker_transform.ns = convert.str().c_str();
             marker_transform.id = detections[i].id;
             marker_transform.type = visualization_msgs::Marker::CUBE;
             marker_transform.action = visualization_msgs::Marker::ADD;
