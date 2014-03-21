@@ -56,7 +56,7 @@ public:
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
         node_.param("/tag_data", tag_data, string(""));
         
-        double small_tag_size = 0.0378968; // (~1.5" tags)
+        double small_tag_size = 0.0358968; //0.0378968; // (~1.5" tags)
         double med_tag_size = 0.0630174; // (~2.5" tags)
         double page_tag_size = 0.165;
         node_.param("/default_tag_size", default_tag_size_, small_tag_size);
