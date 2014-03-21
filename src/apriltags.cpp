@@ -59,7 +59,7 @@ public:
         double small_tag_size = 0.0378968; // (~1.5" tags)
         double med_tag_size = 0.0630174; // (~2.5" tags)
         double page_tag_size = 0.165;
-        node_.param("/default_tag_size", default_tag_size_, med_tag_size);
+        node_.param("/default_tag_size", default_tag_size_, small_tag_size);
         node_.param("/tf_frame", frame_, string("/prosilica_cam"));
         
         // Start the viewer if speficified
