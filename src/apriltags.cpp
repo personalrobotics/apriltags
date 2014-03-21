@@ -46,7 +46,7 @@ public:
                       image_(node_),
                       tag_codes_(AprilTags::tagCodes36h11){
         
-        string camera_topic_name = "/Image"; //"/head_kinect/rgb/image_color";
+        string camera_topic_name = /*"/Image";*/ "/head_kinect/rgb/image_color";
         string output_marker_list_topic_name = "/marker_array";
         string enable_service_name = "/Enable";
         string tag_data;
@@ -59,8 +59,8 @@ public:
         double small_tag_size = 0.0358968; //0.0378968; // (~1.5" tags)
         double med_tag_size = 0.0630174; // (~2.5" tags)
         double page_tag_size = 0.165;
-        node_.param("/default_tag_size", default_tag_size_, small_tag_size);
-        node_.param("/tf_frame", frame_, string("/prosilica_cam")); //string("/head_kinect_rgb_frame"));
+        node_.param("/default_tag_size", default_tag_size_, med_tag_size);
+        node_.param("/tf_frame", frame_, /*string("/prosilica_cam"));*/ string("/head_kinect_rgb_frame"));
         
         // Start the viewer if speficified
         if(viewer_){
