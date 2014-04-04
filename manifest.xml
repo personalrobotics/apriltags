@@ -1,0 +1,20 @@
+<package>
+  <description brief="apriltags_swat">
+
+     apriltags_swat
+
+  </description>
+  <author>Aaron Walsman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/apriltags_swat</url>
+  <rosdep name="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="std_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+
+</package>
+
+
