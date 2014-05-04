@@ -4,125 +4,170 @@
 #include <visualization_msgs/Marker.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include <cv_bridge/CvBridge.h>
+//#include <cv_bridge/CvBridge.h>
+#include <cv_bridge/cv_bridge.h>
 
-//#include <src/TagDetectorParams.h>
 #include <src/TagDetector.h>
+#include <src/TagDetection.h>
 #include <src/TagFamily.h>
 
-/*
-#include <AprilTags/TagDetector.h>
-#include <AprilTags/Tag16h5.h>
-#include <AprilTags/Tag25h7.h>
-#include <AprilTags/Tag25h9.h>
-#include <AprilTags/Tag36h9.h>
-#include <AprilTags/Tag36h11.h>
-*/
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <visualization_msgs/MarkerArray.h>
 #include "yaml-cpp/yaml.h"
 #include <sstream>
 #include <fstream>
 
+#include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
-//
-using namespace std;
 
-//0.0378968; // (~1.5" tags)
-// (~2.5" tags)
 #define SMALL_TAG_SIZE 0.0358968
 #define MED_TAG_SIZE 0.0630174
 #define PAGE_TAG_SIZE 0.165
 
-#define DEFAULT_TAG_FAMILY string("36h11")
+#define DEFAULT_TAG_FAMILY string("Tag36h11")
+
+using namespace std;
 
 class AprilTagsNode {
+    // ROS interface
     ros::NodeHandle node_;
     image_transport::ImageTransport image_;
     ros::Publisher marker_publisher_;
-    ros::ServiceServer detect_enable_;
+    ros::TransportHints ros_transport_hints;
+    image_transport::Subscriber image_subscriber;
+    image_transport::TransportHints image_transport_hint;
+    ros::Subscriber info_subscriber;
+    ros::ServiceServer start_service_;
+    ros::ServiceServer stop_service_;
+    ros::ServiceServer stop_all_service_;
+    ros::ServiceServer is_running_service_;
     
-    /*
-    AprilTags::TagDetector* tag_detector_;
-    AprilTags::TagCodes tag_codes_;
-    */
+    // AprilTag parts
     TagFamily* family_;
     TagDetector* detector_;
-    
     string tag_family_name_;
     sensor_msgs::CameraInfo camera_info_;
     
+    // Settings and local information
     int viewer_;
     boost::unordered_map<size_t, double> tag_sizes_;
     double default_tag_size_;
     string frame_;
-    
-    ros::Subscriber image_subscriber;
-    ros::Subscriber info_subscriber;
-    
-    int enabled_;
+    bool running_;
+    boost::unordered_set<int> open_ids_;
+    unsigned int next_open_id_;
 
 public:
+    // Constructor
     AprilTagsNode() : node_("~"),
-                      image_(node_){
+                      image_(node_),
+                      ros_transport_hints(ros::TransportHints().tcpNoDelay()),
+                      image_transport_hint(image_transport::TransportHints(
+                            "raw", ros_transport_hints, node_,
+                            "image_transport")){
         
         string camera_topic_name = "/Image";
         string output_marker_list_topic_name = "/marker_array";
-        string enable_service_name = "/Enable";
+        string start_service_name = "/Start";
         string tag_data;
         
-        // Get apriltags options
+        // Set AprilTag options
         TagDetectorParams tag_params;
+        tag_params.newQuadAlgorithm = 1;
         
-        // Get Parameters
-        node_.param("/viewer", viewer_, 0);
+        // Get parameters
+        node_.param("/viewer", viewer_, 1);
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
+        node_.param("/tag_data", tag_data, string(""));
+        node_.param("/default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
+        node_.param("/tf_frame", frame_, string("/prosilica_cam"));
+        
+        // Initialize the tag family and detector
         family_ = new TagFamily(tag_family_name_);
         detector_ = new TagDetector(*family_, tag_params);
-        
-        node_.param("/tag_data", tag_data, string(""));
-        
-        node_.param("/default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
-        node_.param("/tf_frame", frame_, string("/head_kinect_rgb_frame"));
         
         // Start the viewer if speficified
         if(viewer_){
             cvNamedWindow("AprilTags");
             cvStartWindowThread();
         }
-    
-        // Tag Detector
-        //SetTagCodeFromString(tag_family_name_);
-        
-        //tag_detector_ = new AprilTags::TagDetector(tag_codes_);
         
         // Publisher
         marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>(
-                output_marker_list_topic_name, 0);
+                output_marker_list_topic_name, 1);
         
-        // Subscriber
-        //image_transport::CameraSubscriber sub = image_.subscribeCamera(
-        //        camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
+        // Subscribers
+        image_subscriber = image_.subscribe(
+                camera_topic_name, 1, &AprilTagsNode::ImageCallback, this,
+                image_transport_hint);
+        info_subscriber = node_.subscribe(
+                "/camera_info", 10, &AprilTagsNode::InfoCallback, this);
         
-        image_subscriber = node_.subscribe(camera_topic_name, 10, &AprilTagsNode::ImageCallback, this);
+        // Start/Stop Services
+        start_service_ = node_.advertiseService(
+                "start", &AprilTagsNode::StartService, this);
+        stop_service_ = node_.advertiseService(
+                "stop", &AprilTagsNode::StopService, this);
+        stop_all_service_ = node_.advertiseService(
+                "stop_all", &AprilTagsNode::StopAllService, this);
+        is_running_service = node_.advertiseService(
+                "is_running", &AprilTagsNode::IsRunningService, this);
+        next_open_id_ = 0;
         
-        //image_transport::Subscriber sub = image_.subscribe(
-        //        camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
-        
-        info_subscriber = node_.subscribe("/camera_info", 10, &AprilTagsNode::InfoCallback, this);
-        
-        // Store Tag Sizes
-        StoreTagSizes(tag_data);
+        // Store tag data
+        StoreTagData(tag_data);
     }
     
+    // Destructor
     ~AprilTagsNode(){
         cvDestroyWindow("AprilTags");
-        //delete tag_detector_;
         delete detector_;
         delete family_;
     }
     
-    void StoreTagSizes(string tag_data){
+    // Start Service
+    bool StartService(apriltags::Start::Request &req,
+                      apriltags::Start::Response &res){
+        res.id = next_open_id_;
+        running_ = true;
+        ++next_open_id_;
+        open_ids_.insert(res.id);
+        return true;
+    }
+    
+    // Stop Service
+    bool StopService(AprilTags::Stop::Request &req,
+                     AprilTags::Stop::Response &res){
+        open_ids_.erase(req.id);
+        size_t num_open_ = open_ids_.size();
+        res.closed = 0;
+        if(num_open_ == 0){
+            running_ = false;
+            res.closed = 1;
+        }
+        return true;
+    }
+    
+    // Stop All Service
+    bool StopAllService(AprilTags::StopAll::Request &req,
+                        AprilTags::StopAll::Response &res){
+        open_ids_.clear();
+        running_ = false;
+        next_open_id_ = 0;
+        return true;
+    }
+    
+    // Is Running Service
+    bool IsRunningService(AprilTags::IsRunning::Request &req,
+                          AprilTags::IsRunning::Response &res){
+        res.running = running_;
+        return true;
+    }
+    
+    // Store Tag Data
+    void StoreTagData(string tag_data){
         stringstream tag_ss;
         tag_ss << tag_data;
         YAML::Parser parser(tag_ss);
@@ -130,10 +175,6 @@ public:
         parser.GetNextDocument(doc);
         
         for(YAML::Iterator field = doc.begin(); field != doc.end(); ++field){
-            //string index_str;
-            //field.first() >> index_str;
-            //size_t index = atoi(index_str.c_str());
-            
             int index;
             field.first() >> index;
             
@@ -151,51 +192,50 @@ public:
         }
     }
     
+    // Callback for camera info
     void InfoCallback(
             const sensor_msgs::CameraInfoConstPtr& camera_info){
-        camera_info_ = (*camera_info);
+        if(running_){
+            camera_info_ = (*camera_info);
+        }
     }
     
+    // Callback for image data
     void ImageCallback(
             const sensor_msgs::ImageConstPtr& msg )//,
-           // const sensor_msgs::CameraInfoConstPtr& camera_info)
     {
-        sensor_msgs::CvBridge bridge;
-        cv::Mat subscribed_image;
-        try{
-            subscribed_image = bridge.imgMsgToCv(msg, "bgr8");
-        }
-        catch(sensor_msgs::CvBridgeException& e){
-            ROS_ERROR("Could not convert from '%s' to 'bgr8'.",
-                      msg->encoding.c_str());
+        // Only continue if the node is running
+        if(!running_){
             return;
         }
         
-        cv::Mat subscribed_gray;
-        cv::cvtColor(subscribed_image, subscribed_gray, CV_BGR2GRAY);
-        //vector<AprilTags::TagDetection> detections =
-        //        tag_detector_->extractTags(subscribed_gray);
+        // Get the image
+        cv_bridge::CvImagePtr subscribed_ptr;
+        try{
+            subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
+        }
+        catch(cv_bridge::Exception& e){
+            ROS_ERROR("cv_bridge exception: %s", e.what());
+            return;
+        }
+        
+        cv::Mat subscribed_gray = subscribed_ptr->image;
+        cv::Mat tmp;
+        cv::Point2d opticalCenter(0.5*subscribed_gray.rows,
+                                  0.5*subscribed_gray.cols);
+        TagDetectionArray detections;
+        detector_->process(subscribed_gray, opticalCenter, detections);
         visualization_msgs::MarkerArray marker_transforms;
         
-        /*
+        if(viewer_){
+            subscribed_gray = family_->superimposeDetections(subscribed_gray,
+                                                              detections);
+        }
         for(unsigned int i = 0; i < detections.size(); ++i){
-            double tag_size = default_tag_size_;
-            boost::unordered_map<size_t, double>::iterator tag_size_it =
-                    tag_sizes_.find(detections[i].id);
             
-            if(tag_size_it != tag_sizes_.end()){
-                tag_size = (*tag_size_it).second; 
-            }
+            Eigen::Matrix4d pose = GetDetectionTransform(detections[i]);
             
-            if(viewer_){
-                detections[i].draw(subscribed_image);
-            }
-            
-            Eigen::Matrix4d pose;
-            pose = detections[i].getRelativeTransform(
-                    tag_size,
-                    (camera_info_).K[0], (camera_info_).K[4],
-                    (camera_info_).K[2], (camera_info_).K[5]);
+            // Get this info from earlier code, don't extract it again
             Eigen::Matrix3d R = pose.block<3,3>(0,0);
             Eigen::Quaternion<double> q(R);
             
@@ -215,21 +255,71 @@ public:
             marker_transform.pose.orientation.y = q.y();
             marker_transform.pose.orientation.z = q.z();
             marker_transform.pose.orientation.w = q.w();
-            marker_transform.scale.x = tag_size;
-            marker_transform.scale.y = tag_size;
-            marker_transform.scale.z = 0.05 * tag_size;
+            marker_transform.scale.x = 1.;//tag_size;
+            marker_transform.scale.y = 1.;//tag_size;
+            marker_transform.scale.z = 0.05;// * tag_size;
             marker_transform.color.r = 0.5;
             marker_transform.color.g = 0.5;
             marker_transform.color.b = 0.5;
             marker_transform.color.a = 1.0;
             marker_transforms.markers.push_back(marker_transform);
         }
-        */
         marker_publisher_.publish(marker_transforms);
         
         if(viewer_){
-            cv::imshow("AprilTags", subscribed_image);
+            cv::imshow("AprilTags", subscribed_gray);
         }
+    }
+    
+    Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
+        double tag_size = default_tag_size_;
+        boost::unordered_map<size_t, double>::iterator tag_size_it =
+                tag_sizes_.find(detection.id);
+        if(tag_size_it != tag_sizes_.end()){
+            tag_size = (*tag_size_it).second; 
+        }
+        
+        std::vector<cv::Point3f> object_pts;
+        std::vector<cv::Point2f> image_pts;
+        double tag_radius = tag_size/2.;
+        
+        object_pts.push_back(cv::Point3f(-tag_radius, -tag_radius, 0));
+        object_pts.push_back(cv::Point3f( tag_radius, -tag_radius, 0));
+        object_pts.push_back(cv::Point3f( tag_radius,  tag_radius, 0));
+        object_pts.push_back(cv::Point3f(-tag_radius,  tag_radius, 0));
+        
+        image_pts.push_back(detection.p[0]);
+        image_pts.push_back(detection.p[1]);
+        image_pts.push_back(detection.p[2]);
+        image_pts.push_back(detection.p[3]);
+        /*
+        image_pts.push_back(cv::Point2f(detection.p[0].x, detection.p[0].y));
+        image_pts.push_back(cv::Point2f(detection.p[1].x, detection.p[1].y));
+        image_pts.push_back(cv::Point2f(detection.p[2].x, detection.p[2].y));
+        image_pts.push_back(cv::Point2f(detection.p[3].x, detection.p[3].y));
+        */
+        cv::Matx33f intrinsics(camera_info_.K[0], 0, camera_info_.K[2],
+                               0, camera_info_.K[4], camera_info_.K[5],
+                               0, 0, 1);
+        
+        cv::Mat rvec, tvec;
+        cv::Vec4f dist_param(0,0,0,0);
+        cv::solvePnP(object_pts, image_pts, intrinsics, dist_param,
+                rvec, tvec);
+        cv::Matx33d r;
+        cv::Rodrigues(rvec, r);
+        Eigen::Matrix3d rot;
+        rot << r(0,0), r(0,1), r(0,2),
+               r(1,0), r(1,1), r(1,2),
+               r(2,0), r(2,1), r(2,2);
+        
+        Eigen::Matrix4d T;
+        T.topLeftCorner(3,3) = rot;
+        T.col(3).head(3) <<
+                tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
+        T.row(3) << 0,0,0,1;
+        
+        return T;
     }
 };
 
