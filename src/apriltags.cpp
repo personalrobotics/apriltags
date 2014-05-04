@@ -1,17 +1,23 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-//#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.h>
 #include <visualization_msgs/Marker.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <cv_bridge/CvBridge.h>
 
+//#include <src/TagDetectorParams.h>
+#include <src/TagDetector.h>
+#include <src/TagFamily.h>
+
+/*
 #include <AprilTags/TagDetector.h>
 #include <AprilTags/Tag16h5.h>
 #include <AprilTags/Tag25h7.h>
 #include <AprilTags/Tag25h9.h>
 #include <AprilTags/Tag36h9.h>
 #include <AprilTags/Tag36h11.h>
+*/
 
 #include <visualization_msgs/MarkerArray.h>
 #include "yaml-cpp/yaml.h"
@@ -19,25 +25,31 @@
 #include <fstream>
 
 #include <boost/unordered_map.hpp>
-
+//
 using namespace std;
 
-#define SMALL_TAG_SIZE = 0.0358968; //0.0378968; // (~1.5" tags)
-#define MED_TAG_SIZE = 0.0630174; // (~2.5" tags)
-#define PAGE_TAG_SIZE = 0.165;
+//0.0378968; // (~1.5" tags)
+// (~2.5" tags)
+#define SMALL_TAG_SIZE 0.0358968
+#define MED_TAG_SIZE 0.0630174
+#define PAGE_TAG_SIZE 0.165
 
 #define DEFAULT_TAG_FAMILY string("36h11")
 
 class AprilTagsNode {
     ros::NodeHandle node_;
-    //image_transport::ImageTransport image_;
+    image_transport::ImageTransport image_;
     ros::Publisher marker_publisher_;
     ros::ServiceServer detect_enable_;
     
+    /*
     AprilTags::TagDetector* tag_detector_;
     AprilTags::TagCodes tag_codes_;
-    string tag_family_name_;
+    */
+    TagFamily* family_;
+    TagDetector* detector_;
     
+    string tag_family_name_;
     sensor_msgs::CameraInfo camera_info_;
     
     int viewer_;
@@ -52,17 +64,22 @@ class AprilTagsNode {
 
 public:
     AprilTagsNode() : node_("~"),
-                      image_(node_),
-                      tag_codes_(AprilTags::tagCodes36h11){
+                      image_(node_){
         
         string camera_topic_name = "/Image";
         string output_marker_list_topic_name = "/marker_array";
         string enable_service_name = "/Enable";
         string tag_data;
         
+        // Get apriltags options
+        TagDetectorParams tag_params;
+        
         // Get Parameters
         node_.param("/viewer", viewer_, 0);
         node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
+        family_ = new TagFamily(tag_family_name_);
+        detector_ = new TagDetector(*family_, tag_params);
+        
         node_.param("/tag_data", tag_data, string(""));
         
         node_.param("/default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
@@ -75,8 +92,9 @@ public:
         }
     
         // Tag Detector
-        SetTagCodeFromString(tag_family_name_);
-        tag_detector_ = new AprilTags::TagDetector(tag_codes_);
+        //SetTagCodeFromString(tag_family_name_);
+        
+        //tag_detector_ = new AprilTags::TagDetector(tag_codes_);
         
         // Publisher
         marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>(
@@ -88,6 +106,9 @@ public:
         
         image_subscriber = node_.subscribe(camera_topic_name, 10, &AprilTagsNode::ImageCallback, this);
         
+        //image_transport::Subscriber sub = image_.subscribe(
+        //        camera_topic_name, 1, &AprilTagsNode::ImageCallback, this);
+        
         info_subscriber = node_.subscribe("/camera_info", 10, &AprilTagsNode::InfoCallback, this);
         
         // Store Tag Sizes
@@ -96,29 +117,9 @@ public:
     
     ~AprilTagsNode(){
         cvDestroyWindow("AprilTags");
-        delete tag_detector_;
-    }
-    
-    void SetTagCodeFromString(string code_string){
-        if(code_string == "16h5"){
-            tag_codes_ = AprilTags::tagCodes16h5;
-        }
-        else if(code_string == "25h7"){
-            tag_codes_ = AprilTags::tagCodes25h7;
-        }
-        else if(code_string == "25h9"){
-            tag_codes_ = AprilTags::tagCodes25h9;
-        }
-        else if(code_string == "36h9"){
-            tag_codes_ = AprilTags::tagCodes36h9;
-        }
-        else if(code_string == "36h11"){
-            tag_codes_ = AprilTags::tagCodes36h11;
-        }
-        else{
-            cout << "Invalid tag family specified : " << code_string << endl;
-            exit(1);
-        }
+        //delete tag_detector_;
+        delete detector_;
+        delete family_;
     }
     
     void StoreTagSizes(string tag_data){
@@ -159,7 +160,6 @@ public:
             const sensor_msgs::ImageConstPtr& msg )//,
            // const sensor_msgs::CameraInfoConstPtr& camera_info)
     {
-        
         sensor_msgs::CvBridge bridge;
         cv::Mat subscribed_image;
         try{
@@ -173,11 +173,11 @@ public:
         
         cv::Mat subscribed_gray;
         cv::cvtColor(subscribed_image, subscribed_gray, CV_BGR2GRAY);
-        vector<AprilTags::TagDetection> detections =
-                tag_detector_->extractTags(subscribed_gray);
-        
+        //vector<AprilTags::TagDetection> detections =
+        //        tag_detector_->extractTags(subscribed_gray);
         visualization_msgs::MarkerArray marker_transforms;
         
+        /*
         for(unsigned int i = 0; i < detections.size(); ++i){
             double tag_size = default_tag_size_;
             boost::unordered_map<size_t, double>::iterator tag_size_it =
@@ -224,7 +224,7 @@ public:
             marker_transform.color.a = 1.0;
             marker_transforms.markers.push_back(marker_transform);
         }
-        
+        */
         marker_publisher_.publish(marker_transforms);
         
         if(viewer_){
