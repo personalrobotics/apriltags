@@ -22,6 +22,11 @@
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 
+#include <apriltags/Start.h>
+#include <apriltags/Stop.h>
+#include <apriltags/StopAll.h>
+#include <apriltags/IsRunning.h>
+
 #define SMALL_TAG_SIZE 0.0358968
 #define MED_TAG_SIZE 0.0630174
 #define PAGE_TAG_SIZE 0.165
@@ -57,7 +62,7 @@ class AprilTagsNode {
     string frame_;
     bool running_;
     boost::unordered_set<int> open_ids_;
-    unsigned int next_open_id_;
+    int next_open_id_;
 
 public:
     // Constructor
@@ -69,8 +74,7 @@ public:
                             "image_transport")){
         
         string camera_topic_name = "/Image";
-        string output_marker_list_topic_name = "/marker_array";
-        string start_service_name = "/Start";
+        string output_marker_list_topic_name = "marker_array";
         string tag_data;
         
         // Set AprilTag options
@@ -106,15 +110,16 @@ public:
                 "/camera_info", 10, &AprilTagsNode::InfoCallback, this);
         
         // Start/Stop Services
+        running_ = false;
         start_service_ = node_.advertiseService(
                 "start", &AprilTagsNode::StartService, this);
         stop_service_ = node_.advertiseService(
                 "stop", &AprilTagsNode::StopService, this);
         stop_all_service_ = node_.advertiseService(
                 "stop_all", &AprilTagsNode::StopAllService, this);
-        is_running_service = node_.advertiseService(
+        is_running_service_ = node_.advertiseService(
                 "is_running", &AprilTagsNode::IsRunningService, this);
-        next_open_id_ = 0;
+        next_open_id_ = 1;
         
         // Store tag data
         StoreTagData(tag_data);
@@ -138,8 +143,8 @@ public:
     }
     
     // Stop Service
-    bool StopService(AprilTags::Stop::Request &req,
-                     AprilTags::Stop::Response &res){
+    bool StopService(apriltags::Stop::Request &req,
+                     apriltags::Stop::Response &res){
         open_ids_.erase(req.id);
         size_t num_open_ = open_ids_.size();
         res.closed = 0;
@@ -151,17 +156,17 @@ public:
     }
     
     // Stop All Service
-    bool StopAllService(AprilTags::StopAll::Request &req,
-                        AprilTags::StopAll::Response &res){
+    bool StopAllService(apriltags::StopAll::Request &req,
+                        apriltags::StopAll::Response &res){
         open_ids_.clear();
         running_ = false;
-        next_open_id_ = 0;
+        next_open_id_ = 1;
         return true;
     }
     
     // Is Running Service
-    bool IsRunningService(AprilTags::IsRunning::Request &req,
-                          AprilTags::IsRunning::Response &res){
+    bool IsRunningService(apriltags::IsRunning::Request &req,
+                          apriltags::IsRunning::Response &res){
         res.running = running_;
         return true;
     }
