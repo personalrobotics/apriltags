@@ -1,4 +1,6 @@
 #include <ros/ros.h>
+#include <ros/forwards.h>
+#include <ros/single_subscriber_publisher.h>
 #include <sensor_msgs/Image.h>
 #include <image_transport/image_transport.h>
 #include <visualization_msgs/Marker.h>
@@ -26,6 +28,8 @@
 #include <apriltags/Stop.h>
 #include <apriltags/StopAll.h>
 #include <apriltags/IsRunning.h>
+#include <apriltags/IsIdOpen.h>
+#include <apriltags/RunningIds.h>
 
 #define SMALL_TAG_SIZE 0.0358968
 #define MED_TAG_SIZE 0.0630174
@@ -34,6 +38,10 @@
 #define DEFAULT_TAG_FAMILY string("Tag36h11")
 
 using namespace std;
+
+void ConnectCallback(const ros::SingleSubscriberPublisher& info){
+    
+}
 
 class AprilTagsNode {
     // ROS interface
@@ -48,12 +56,15 @@ class AprilTagsNode {
     ros::ServiceServer stop_service_;
     ros::ServiceServer stop_all_service_;
     ros::ServiceServer is_running_service_;
+    ros::ServiceServer is_id_open_service_;
+    ros::ServiceServer running_ids_service_;
+    sensor_msgs::CameraInfo camera_info_;
+    
     
     // AprilTag parts
     TagFamily* family_;
     TagDetector* detector_;
     string tag_family_name_;
-    sensor_msgs::CameraInfo camera_info_;
     
     // Settings and local information
     int viewer_;
@@ -63,7 +74,11 @@ class AprilTagsNode {
     bool running_;
     boost::unordered_set<int> open_ids_;
     int next_open_id_;
-
+    
+    static void ConnectCallback(const ros::SingleSubscriberPublisher& info){
+        cout << "YO!" << endl;
+    }
+    
 public:
     // Constructor
     AprilTagsNode() : node_("~"),
@@ -82,11 +97,11 @@ public:
         tag_params.newQuadAlgorithm = 1;
         
         // Get parameters
-        node_.param("/viewer", viewer_, 1);
-        node_.param("/tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
-        node_.param("/tag_data", tag_data, string(""));
-        node_.param("/default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
-        node_.param("/tf_frame", frame_, string("/prosilica_cam"));
+        node_.param("viewer", viewer_, 0);
+        node_.param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
+        node_.param("tag_data", tag_data, string(""));
+        node_.param("default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
+        node_.param("tf_frame", frame_, string("/prosilica_cam"));
         
         // Initialize the tag family and detector
         family_ = new TagFamily(tag_family_name_);
@@ -98,9 +113,11 @@ public:
             cvStartWindowThread();
         }
         
+        ros::SubscriberStatusCallback callback = &ConnectCallback;
+        
         // Publisher
         marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>(
-                output_marker_list_topic_name, 1);
+                output_marker_list_topic_name, 1, callback);
         
         // Subscribers
         image_subscriber = image_.subscribe(
@@ -119,6 +136,11 @@ public:
                 "stop_all", &AprilTagsNode::StopAllService, this);
         is_running_service_ = node_.advertiseService(
                 "is_running", &AprilTagsNode::IsRunningService, this);
+        is_id_open_service_ = node_.advertiseService(
+                "is_id_open", &AprilTagsNode::IsIdOpenService, this);
+        running_ids_service_ = node_.advertiseService(
+                "running_ids", &AprilTagsNode::RunningIdsService, this);
+        
         next_open_id_ = 1;
         
         // Store tag data
@@ -160,6 +182,10 @@ public:
                         apriltags::StopAll::Response &res){
         open_ids_.clear();
         running_ = false;
+        
+        // There is an edge case where resetting this is bad if another process
+        // isn't aware that everything was closed, and tries to close an index
+        // that has been reassigned elsewhere.
         next_open_id_ = 1;
         return true;
     }
@@ -168,6 +194,25 @@ public:
     bool IsRunningService(apriltags::IsRunning::Request &req,
                           apriltags::IsRunning::Response &res){
         res.running = running_;
+        return true;
+    }
+    
+    // Is Id Open Service
+    bool IsIdOpenService(apriltags::IsIdOpen::Request &req,
+                         apriltags::IsIdOpen::Response &res){
+        res.open = (open_ids_.find(req.id) != open_ids_.end());
+        return true;
+    }
+    
+    // Running Ids Service
+    bool RunningIdsService(apriltags::RunningIds::Request &req,
+                         apriltags::RunningIds::Response &res){
+        vector<int> ids;
+        for(boost::unordered_set<int>::iterator it = open_ids_.begin();
+                it != open_ids_.end(); ++it){
+            ids.push_back(*it);
+        }
+        res.ids = ids;
         return true;
     }
     
@@ -260,6 +305,7 @@ public:
             marker_transform.pose.orientation.y = q.y();
             marker_transform.pose.orientation.z = q.z();
             marker_transform.pose.orientation.w = q.w();
+            
             marker_transform.scale.x = 1.;//tag_size;
             marker_transform.scale.y = 1.;//tag_size;
             marker_transform.scale.z = 0.05;// * tag_size;
@@ -275,6 +321,7 @@ public:
             cv::imshow("AprilTags", subscribed_gray);
         }
     }
+    
     
     Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
         double tag_size = default_tag_size_;
