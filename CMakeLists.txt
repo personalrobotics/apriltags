@@ -26,8 +26,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 include(ExternalProject)
 ExternalProject_Add(apriltags
     PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
-    #GIT_REPOSITORY file:////homes/pkv/ros/local/apriltags-cpp
-    GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
+    GIT_REPOSITORY file:////homes/pkv/ros/local/apriltags-cpp
+    #GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
     INSTALL_COMMAND ""
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math
 )
@@ -52,8 +52,8 @@ include_directories(include)
 
 rosbuild_add_executable(apriltags src/apriltags.cpp)
 #target_link_libraries(apriltags ${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags-build/libapriltags.so)
-#target_link_libraries(apriltags /homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags-cpp/build/libapriltags.so)
-target_link_libraries(apriltags ${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags-build/libapriltags.so)
+target_link_libraries(apriltags /homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags-cpp/build/libapriltags.so)
+#target_link_libraries(apriltags ${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags-build/libapriltags.so)
 target_link_libraries(apriltags ${OpenCV_LIBS})
 target_link_libraries(apriltags ${EIGEN_LIBS})
 #target_link_libraries(apriltags ${YAMLCPP_LIBRARY})
