@@ -26,7 +26,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 include(ExternalProject)
 ExternalProject_Add(apriltags
     PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
-    GIT_REPOSITORY file:////homes/pkv/ros/local/apriltags-cpp
+    #GIT_REPOSITORY file:////homes/pkv/ros/local/apriltags-cpp
+    GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
     INSTALL_COMMAND ""
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math
 )
