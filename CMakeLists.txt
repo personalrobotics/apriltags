@@ -47,6 +47,7 @@ rosbuild_gensrv()
 include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags/src/)
 include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags)
 include_directories(${EIGEN_INCLUDE_DIR} )
+include_directories(include)
 
 rosbuild_add_executable(apriltags src/apriltags.cpp)
 #target_link_libraries(apriltags ${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags-build/libapriltags.so)
