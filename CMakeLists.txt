@@ -23,15 +23,27 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# Download the external Swatbotics repository
 include(ExternalProject)
-ExternalProject_Add(apriltags
+ExternalProject_Add(apriltags_swatbotics_EXTERNAL
     PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
-    # CHANGE THIS: to a local checkout of the github repository listed below
-    GIT_REPOSITORY file:////homes/pkv/ros/local/apriltags-cpp
-    #GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
+    GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
     INSTALL_COMMAND ""
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math
 )
+
+# Recover project paths for additional settings
+ExternalProject_Get_Property(apriltags_swatbotics_EXTERNAL
+  SOURCE_DIR BINARY_DIR INSTALL_DIR )
+
+# Tell cmake that the external project generated a library so we
+# can add dependencies here instead of later
+add_library(apriltags_swatbotics UNKNOWN IMPORTED)
+set_property(TARGET apriltags_swatbotics
+  PROPERTY IMPORTED_LOCATION
+  ${BINARY_DIR}/libapriltags.a
+  )
+add_dependencies(apriltags_swatbotics apriltags_swatbotics_EXTERNAL)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -52,9 +64,7 @@ include_directories(${EIGEN_INCLUDE_DIR} )
 include_directories(include)
 
 rosbuild_add_executable(apriltags src/apriltags.cpp)
-# CHANGE THIS: to a local compiled version of the libapriltags.so object
-target_link_libraries(apriltags /homes/awalsman/ros/local/pr-ros-pkg/trunk/perception_utils/apriltags-cpp/build/libapriltags.so)
-#target_link_libraries(apriltags ${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags-build/libapriltags.so)
+target_link_libraries(apriltags apriltags_swatbotics)
 target_link_libraries(apriltags ${OpenCV_LIBS})
 target_link_libraries(apriltags ${EIGEN_LIBS})
 target_link_libraries(apriltags yaml-cpp)
