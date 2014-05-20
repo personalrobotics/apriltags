@@ -1,0 +1,25 @@
+COMPILATION:
+
+To get this to compile, you should only need to change CMakeLists.txt.
+Look for the string "CHANGE THIS:" for a short description of what to do.
+
+RUNNING:
+
+By default this subscribes to the /Image topic.
+Then you can run the node using:
+
+rosrun apriltags apriltags
+
+Nothing will happen until something subscribes to the output topic which is:
+
+/apriltags/marker_array
+
+If you use rostopic hz on /apriltags/marker_array it will subscribe and cause
+node to start updating.
+
+If you want to visualize the results, you can set a param before starting the 
+node:
+
+rosparam set /apriltags/viewer 1
+
+(The viewer should highlite the detected tags).
