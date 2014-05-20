@@ -6,7 +6,6 @@
 #include <visualization_msgs/Marker.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-//#include <cv_bridge/CvBridge.h>
 #include <cv_bridge/cv_bridge.h>
 
 #include <src/TagDetector.h>
