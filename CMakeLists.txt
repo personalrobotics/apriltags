@@ -44,6 +44,7 @@ set_property(TARGET apriltags_swatbotics
   ${BINARY_DIR}/libapriltags.a
   )
 add_dependencies(apriltags_swatbotics apriltags_swatbotics_EXTERNAL)
+include_directories(${SOURCE_DIR})
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -58,8 +59,8 @@ rosbuild_gensrv()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags/src/)
-include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags)
+#include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags/src/)
+#include_directories(${PROJECT_SOURCE_DIR}/build/apriltags/src/apriltags)
 include_directories(${EIGEN_INCLUDE_DIR} )
 include_directories(include)
 
