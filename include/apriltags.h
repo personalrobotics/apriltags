@@ -47,7 +47,5 @@ void GetParameterValues();
 void SetupPublisher();
 void InitializeTags();
 void InitializeServices();
-bool StopAllService(apriltags::StopAll::Request &req,apriltags::StopAll::Response &res);
-bool IsRunningService(apriltags::IsRunning::Request &req,apriltags::IsRunning::Response &res);
 void StoreTagData(string tag_data);
 void InitializeROSNode();
