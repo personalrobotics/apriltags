@@ -29,7 +29,7 @@ ExternalProject_Add(apriltags_swatbotics_EXTERNAL
     PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
     GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
     INSTALL_COMMAND ""
-    CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math
+    CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math -DBUILD_SHARED_LIBS:BOOL=ON
 )
 
 # Recover project paths for additional settings
@@ -41,7 +41,7 @@ ExternalProject_Get_Property(apriltags_swatbotics_EXTERNAL
 add_library(apriltags_swatbotics UNKNOWN IMPORTED)
 set_property(TARGET apriltags_swatbotics
   PROPERTY IMPORTED_LOCATION
-  ${BINARY_DIR}/libapriltags.a
+  ${BINARY_DIR}/libapriltags.so
   )
 add_dependencies(apriltags_swatbotics apriltags_swatbotics_EXTERNAL)
 include_directories(${SOURCE_DIR})
