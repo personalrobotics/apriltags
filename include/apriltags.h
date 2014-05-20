@@ -46,6 +46,5 @@ void DisconnectCallback(const ros::SingleSubscriberPublisher& info);
 void GetParameterValues();
 void SetupPublisher();
 void InitializeTags();
-void InitializeServices();
 void StoreTagData(string tag_data);
 void InitializeROSNode();
