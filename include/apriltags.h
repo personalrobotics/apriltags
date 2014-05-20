@@ -43,6 +43,7 @@ void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void ConnectCallback(const ros::SingleSubscriberPublisher& info);
 void DisconnectCallback(const ros::SingleSubscriberPublisher& info);
+void DisconnectHandler();
 void GetParameterValues();
 void SetupPublisher();
 void InitializeTags();
