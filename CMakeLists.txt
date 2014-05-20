@@ -27,7 +27,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 include(ExternalProject)
 ExternalProject_Add(apriltags_swatbotics_EXTERNAL
     PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
-    GIT_REPOSITORY https://github.com/swatbotics/apriltags-cpp
+    GIT_REPOSITORY https://github.com/personalrobotics/apriltags-cpp
     INSTALL_COMMAND ""
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math -DBUILD_SHARED_LIBS:BOOL=ON
 )
@@ -49,7 +49,7 @@ include_directories(${SOURCE_DIR})
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
-rosbuild_gensrv()
+#rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
@@ -69,4 +69,3 @@ target_link_libraries(apriltags apriltags_swatbotics)
 target_link_libraries(apriltags ${OpenCV_LIBS})
 target_link_libraries(apriltags ${EIGEN_LIBS})
 target_link_libraries(apriltags yaml-cpp)
-
