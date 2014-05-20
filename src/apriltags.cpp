@@ -24,12 +24,6 @@
 #include <boost/unordered_map.hpp>
 #include <boost/make_shared.hpp>
 
-#include <apriltags/Start.h>
-#include <apriltags/Stop.h>
-#include <apriltags/StopAll.h>
-#include <apriltags/IsRunning.h>
-#include <apriltags/IsIdOpen.h>
-#include <apriltags/RunningIds.h>
 #include "apriltags.h"
 
 using namespace std;
@@ -224,29 +218,6 @@ void InitializeTags()
     detector_ = new TagDetector(*family_, tag_params);
 }
 
-void InitializeServices()
-{
-    running_ = false;
-    stop_all_service_ = (*node_).advertiseService(
-            "stop_all", &StopAllService);
-    is_running_service_ = (*node_).advertiseService(
-            "is_running", &IsRunningService);
-}
-    
-// Stop All Service
-bool StopAllService(apriltags::StopAll::Request &req,
-                    apriltags::StopAll::Response &res){
-    DisconnectHandler();
-    return true;
-}
-
-// Is Running Service
-bool IsRunningService(apriltags::IsRunning::Request &req,
-                      apriltags::IsRunning::Response &res){
-    res.running = running_;
-    return true;
-}
-
 // Store Tag Data
 void StoreTagData(string tag_data){
     stringstream tag_ss;
@@ -292,7 +263,7 @@ int main(int argc, char **argv){
         cvStartWindowThread();
     }
 
-    InitializeServices();
+    running_ = false;
     StoreTagData(tag_data);
     ros::spin();
 
