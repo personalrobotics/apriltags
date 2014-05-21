@@ -1,12 +1,18 @@
-cmake_minimum_required(VERSION 2.8.3)
-
 # Set up the ROS Catkin package settings.
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
+  std_msgs
+  sensor_msgs
+  image_transport
+  roscpp)
 find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
 
 # Set up the ROS Catkin package settings.
 catkin_package()
+
+include(FindPkgConfig)
+pkg_check_modules(Yaml REQUIRED yaml-cpp)
 
 # CGAL requires that -frounding-math be set.
 add_definitions(-frounding-math)
@@ -24,7 +30,7 @@ ExternalProject_Add(apriltags_swatbotics_EXTERNAL
 ExternalProject_Get_Property(apriltags_swatbotics_EXTERNAL
   SOURCE_DIR BINARY_DIR INSTALL_DIR)
 set(apriltags_swatbotics_INCLUDE_DIRS
-  "${SOURCE_DIR}/include"
+  "${SOURCE_DIR}"
   CACHE INTERNAL "" FORCE
 )
 
@@ -36,17 +42,21 @@ set_property(TARGET apriltags_swatbotics
   ${BINARY_DIR}/libapriltags.so)
 add_dependencies(apriltags_swatbotics apriltags_swatbotics_EXTERNAL)
 
-
 include_directories(
-    include/${PROJECT_NAME}
+    include/
     ${catkin_INCLUDE_DIRS}
+    ${Eigen_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${Yaml_INCLUDE_DIRS}
     ${apriltags_swatbotics_INCLUDE_DIRS})
 
 add_executable(apriltags src/apriltags.cpp)
 target_link_libraries(apriltags ${catkin_LIBRARIES})
+target_link_libraries(apriltags ${Eigen_LIBRARIES})
+target_link_libraries(apriltags ${OpenCV_LIBRARIES})
+target_link_libraries(apriltags ${Yaml_LIBRARIES})
 target_link_libraries(apriltags apriltags_swatbotics)
 
 install(TARGETS apriltags
-    EXECUTABLE DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-install(TARGETS apriltags_swatbotics
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
