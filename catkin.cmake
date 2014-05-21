@@ -4,13 +4,15 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   image_transport
-  roscpp)
+  roscpp
+)
 find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
 
 # Set up the ROS Catkin package settings.
-catkin_package()
+catkin_package() # TODO: is this correct?
 
+# Import the yaml-cpp libraries.
 include(FindPkgConfig)
 pkg_check_modules(Yaml REQUIRED yaml-cpp)
 
@@ -20,9 +22,9 @@ add_definitions(-frounding-math)
 # Download the external Swatbotics repository.
 include(ExternalProject)
 ExternalProject_Add(apriltags_swatbotics_EXTERNAL
-    PREFIX ${PROJECT_SOURCE_DIR}/build/apriltags
     GIT_REPOSITORY https://github.com/personalrobotics/apriltags-cpp
     INSTALL_COMMAND ""
+    BUILD_COMMAND "make" # I don't know why this works...
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math -DBUILD_SHARED_LIBS:BOOL=ON
 )
 
@@ -31,7 +33,9 @@ ExternalProject_Get_Property(apriltags_swatbotics_EXTERNAL
   SOURCE_DIR BINARY_DIR INSTALL_DIR)
 set(apriltags_swatbotics_INCLUDE_DIRS
   "${SOURCE_DIR}"
-  CACHE INTERNAL "" FORCE
+)
+set(apriltags_swatbotics_LIBRARIES
+  "${BINARY_DIR}/libapriltags.so"
 )
 
 # Tell CMake that the external project generated a library so we
@@ -39,7 +43,8 @@ set(apriltags_swatbotics_INCLUDE_DIRS
 add_library(apriltags_swatbotics UNKNOWN IMPORTED)
 set_property(TARGET apriltags_swatbotics
   PROPERTY IMPORTED_LOCATION
-  ${BINARY_DIR}/libapriltags.so)
+  ${apriltags_swatbotics_LIBRARIES}
+)
 add_dependencies(apriltags_swatbotics apriltags_swatbotics_EXTERNAL)
 
 include_directories(
@@ -48,7 +53,8 @@ include_directories(
     ${Eigen_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     ${Yaml_INCLUDE_DIRS}
-    ${apriltags_swatbotics_INCLUDE_DIRS})
+    ${apriltags_swatbotics_INCLUDE_DIRS}
+)
 
 add_executable(apriltags src/apriltags.cpp)
 target_link_libraries(apriltags ${catkin_LIBRARIES})
@@ -58,5 +64,10 @@ target_link_libraries(apriltags ${Yaml_LIBRARIES})
 target_link_libraries(apriltags apriltags_swatbotics)
 
 install(TARGETS apriltags
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(FILES ${apriltags_swatbotics_LIBRARIES}
+  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
