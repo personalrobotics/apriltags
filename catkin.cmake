@@ -10,7 +10,7 @@ find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
 
 # Set up the ROS Catkin package settings.
-catkin_package() # TODO: is this correct?
+catkin_package()
 
 # Import the yaml-cpp libraries.
 include(FindPkgConfig)
@@ -64,10 +64,9 @@ target_link_libraries(apriltags ${Yaml_LIBRARIES})
 target_link_libraries(apriltags apriltags_swatbotics)
 
 install(TARGETS apriltags
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} 
 )
+
 install(FILES ${apriltags_swatbotics_LIBRARIES}
   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
