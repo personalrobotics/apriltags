@@ -30,14 +30,22 @@ using namespace std;
 
 // Functions
 
-Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
+double GetTagSize(int tag_id)
+{
     double tag_size = default_tag_size_;
+
     boost::unordered_map<size_t, double>::iterator tag_size_it =
-            tag_sizes_.find(detection.id);
+            tag_sizes_.find(tag_id);
     if(tag_size_it != tag_sizes_.end()){
-        tag_size = (*tag_size_it).second; 
+        tag_size = (*tag_size_it).second;
     }
-    
+
+    return tag_size;
+}
+
+Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
+    double tag_size = GetTagSize(detection.id);
+
     std::vector<cv::Point3f> object_pts;
     std::vector<cv::Point2f> image_pts;
     double tag_radius = tag_size/2.;
@@ -139,13 +147,14 @@ void ImageCallback(
         marker_transform.pose.orientation.y = q.y();
         marker_transform.pose.orientation.z = q.z();
         marker_transform.pose.orientation.w = q.w();
-        
-        marker_transform.scale.x = 1.;//tag_size;
-        marker_transform.scale.y = 1.;//tag_size;
-        marker_transform.scale.z = 0.05;// * tag_size;
-        marker_transform.color.r = 0.5;
-        marker_transform.color.g = 0.5;
-        marker_transform.color.b = 0.5;
+
+    	double tag_size = GetTagSize(detections[i].id);
+        marker_transform.scale.x = tag_size;
+        marker_transform.scale.y = tag_size;
+        marker_transform.scale.z = 0.05 * tag_size;
+        marker_transform.color.r = 1.0;
+        marker_transform.color.g = 0.0;
+        marker_transform.color.b = 1.0;
         marker_transform.color.a = 1.0;
         marker_transforms.markers.push_back(marker_transform);
     }
