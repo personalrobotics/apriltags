@@ -5,6 +5,7 @@
   -->
   <node pkg="apriltags" type="apriltags" name="apriltags">
     <param name="tag_size" value="0.037" />
+    <param name="tf_frame" value="/openni_rgb_optical_frame"/>
 
     <remap from="image" to="/camera/rgb/image_rect"/>
     <remap from="camera_info" to="/camera/rgb/camera_info"/>
