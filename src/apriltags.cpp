@@ -84,25 +84,14 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
 }
 
 // Callback for camera info
-void InfoCallback(
-        const sensor_msgs::CameraInfoConstPtr& camera_info)
+void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {
-    if(running_)
-    {
-        camera_info_ = (*camera_info);
-    }
+    camera_info_ = (*camera_info);
 }
 
 // Callback for image data
-void ImageCallback(
-        const sensor_msgs::ImageConstPtr& msg )
-{
-    // Only continue if the node is running
-    if(!running_)
-    {
-        return;
-    }
-    
+void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
+{    
     // Get the image
     cv_bridge::CvImagePtr subscribed_ptr;
     try
@@ -173,39 +162,43 @@ void ImageCallback(
 
 void ConnectCallback(const ros::SingleSubscriberPublisher& info)
 {
-    // Subscribers
+    // Check for subscribers.
     uint32_t subscribers = marker_publisher_.getNumSubscribers();
-    ROS_INFO("Subscription detected! (%d subscribers)", subscribers);
+    ROS_DEBUG("Subscription detected! (%d subscribers)", subscribers);
 
-    ros::TransportHints ros_transport_hints(ros::TransportHints().tcpNoDelay());
-    image_transport::TransportHints image_transport_hint(image_transport::TransportHints(
-                            "raw", ros_transport_hints, (*node_),
-                            "image_transport"));
+    if(subscribers && !running_)
+    {
+        ROS_DEBUG("New Subscribers, Connecting to Input Image Topic.");
+        ros::TransportHints ros_transport_hints(ros::TransportHints().tcpNoDelay());
+        image_transport::TransportHints image_transport_hint(image_transport::TransportHints(
+                                "raw", ros_transport_hints, (*node_),
+                                "image_transport"));
 
-    image_subscriber = (*image_).subscribe(
-            DEFAULT_IMAGE_TOPIC, 1, &ImageCallback,
-            image_transport_hint);
-    info_subscriber = (*node_).subscribe(
-            DEFAULT_CAMERA_INFO_TOPIC, 10, &InfoCallback);
-    running_ = true;
+        image_subscriber = (*image_).subscribe(
+                DEFAULT_IMAGE_TOPIC, 1, &ImageCallback,
+                image_transport_hint);
+        info_subscriber = (*node_).subscribe(
+                DEFAULT_CAMERA_INFO_TOPIC, 10, &InfoCallback);
+        running_ = true;
+    }
 }
 
 void DisconnectHandler()
 {
-    running_ = false;
-    image_subscriber.shutdown();
-    info_subscriber.shutdown();
 }
 
 void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
 {
+    // Check for subscribers.
     uint32_t subscribers = marker_publisher_.getNumSubscribers();
-    ROS_INFO("Unsubscription detected! (%d subscribers)",subscribers);
+    ROS_DEBUG("Unsubscription detected! (%d subscribers)", subscribers);
     
-    if(!subscribers)
+    if(!subscribers && running_)
     {
-        ROS_INFO("No Subscribers, Disconnecting from Input Image Topic.");
-        DisconnectHandler();
+        ROS_DEBUG("No Subscribers, Disconnecting from Input Image Topic.");
+		image_subscriber.shutdown();
+		info_subscriber.shutdown();
+		running_ = false;
     }
 }
 
@@ -227,13 +220,14 @@ void GetParameterValues()
     {
         // Retrieve the settings for the next tag.
         int tag_id = boost::lexical_cast<int>(it->first);
-	XmlRpc::XmlRpcValue tag_values = it->second;
+        XmlRpc::XmlRpcValue tag_values = it->second;
 
-	// Load all the settings for this tag.
-	if (tag_values.hasMember("size")) 
-	{
-	    tag_sizes_[tag_id] = static_cast<double>(tag_values["size"]);
-	}
+        // Load all the settings for this tag.
+        if (tag_values.hasMember("size")) 
+        {
+            tag_sizes_[tag_id] = static_cast<double>(tag_values["size"]);
+            ROS_DEBUG("Setting tag%d to size %f m.", tag_id, tag_sizes_[tag_id]);
+        }
     }
 }
 
