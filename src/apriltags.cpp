@@ -185,10 +185,10 @@ void ConnectCallback(const ros::SingleSubscriberPublisher& info)
                             "image_transport"));
 
     image_subscriber = (*image_).subscribe(
-            camera_topic_name, 1, &ImageCallback,
+            DEFAULT_IMAGE_TOPIC, 1, &ImageCallback,
             image_transport_hint);
     info_subscriber = (*node_).subscribe(
-            "/camera_info", 10, &InfoCallback);
+            DEFAULT_CAMERA_INFO_TOPIC, 10, &InfoCallback);
     running_ = true;
 }
 
@@ -217,7 +217,7 @@ void GetParameterValues()
     (*node_).param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     (*node_).param("tag_data", tag_data, string(""));
     (*node_).param("default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
-    (*node_).param("tf_frame", frame_, string("/prosilica_cam"));
+    (*node_).param("tf_frame", frame_, DEFAULT_TF_FRAME);
 }
 
 void SetupPublisher()
@@ -227,7 +227,7 @@ void SetupPublisher()
     
     // Publisher
     marker_publisher_ = (*node_).advertise<visualization_msgs::MarkerArray>(
-            output_marker_list_topic_name, 1, connect_callback,
+            DEFAULT_MARKER_TOPIC, 1, connect_callback,
             disconnect_callback);
 }
 
