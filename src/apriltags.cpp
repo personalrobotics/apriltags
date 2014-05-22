@@ -32,15 +32,13 @@ using namespace std;
 
 double GetTagSize(int tag_id)
 {
-    double tag_size = default_tag_size_;
-
-    boost::unordered_map<size_t, double>::iterator tag_size_it =
-            tag_sizes_.find(tag_id);
-    if(tag_size_it != tag_sizes_.end()){
-        tag_size = (*tag_size_it).second;
+    boost::unordered_map<size_t, double>::iterator tag_sizes_it =
+        tag_sizes_.find(tag_id);
+    if(tag_sizes_it != tag_sizes_.end()) {
+        return tag_sizes_it->second;
+    } else {
+        return default_tag_size_;
     }
-
-    return tag_size;
 }
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
@@ -213,11 +211,30 @@ void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
 
 void GetParameterValues()
 {
-    (*node_).param("viewer", viewer_, 0);
-    (*node_).param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
-    (*node_).param("tag_data", tag_data, string(""));
-    (*node_).param("default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
-    (*node_).param("tf_frame", frame_, DEFAULT_TF_FRAME);
+    // Load node-wide configuration values.
+    node_->param("viewer", viewer_, 0);
+    node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
+    node_->param("default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
+    node_->param("tf_frame", frame_, DEFAULT_TF_FRAME);
+
+    // Load tag specific configuration values.
+    XmlRpc::XmlRpcValue tag_data;
+    node_->param("tag_data", tag_data, tag_data);
+
+    // Iterate through each tag in the configuration.
+    XmlRpc::XmlRpcValue::ValueStruct::iterator it;
+    for (it = tag_data.begin(); it != tag_data.end(); ++it)
+    {
+        // Retrieve the settings for the next tag.
+        int tag_id = boost::lexical_cast<int>(it->first);
+	XmlRpc::XmlRpcValue tag_values = it->second;
+
+	// Load all the settings for this tag.
+	if (tag_values.hasMember("size")) 
+	{
+	    tag_sizes_[tag_id] = static_cast<double>(tag_values["size"]);
+	}
+    }
 }
 
 void SetupPublisher()
@@ -226,7 +243,7 @@ void SetupPublisher()
     ros::SubscriberStatusCallback disconnect_callback = &DisconnectCallback;
     
     // Publisher
-    marker_publisher_ = (*node_).advertise<visualization_msgs::MarkerArray>(
+    marker_publisher_ = node_->advertise<visualization_msgs::MarkerArray>(
             DEFAULT_MARKER_TOPIC, 1, connect_callback,
             disconnect_callback);
 }
@@ -236,33 +253,6 @@ void InitializeTags()
     tag_params.newQuadAlgorithm = 1;
     family_ = new TagFamily(tag_family_name_);
     detector_ = new TagDetector(*family_, tag_params);
-}
-
-// Store Tag Data
-void StoreTagData(string tag_data)
-{
-    stringstream tag_ss;
-    tag_ss << tag_data;
-    YAML::Parser parser(tag_ss);
-    YAML::Node doc;
-    parser.GetNextDocument(doc);
-    
-    for(YAML::Iterator field = doc.begin(); field != doc.end(); ++field){
-        int index;
-        field.first() >> index;
-        
-        const YAML::Node& value = field.second();
-        for(YAML::Iterator sub_field = value.begin();
-                sub_field != value.end(); ++sub_field){
-            
-            string key;
-            sub_field.first() >> key;
-            
-            if(key == "size"){
-                sub_field.second() >> tag_sizes_[index];
-            }
-        }
-    }
 }
 
 void InitializeROSNode(int argc, char **argv)
@@ -284,10 +274,8 @@ int main(int argc, char **argv)
         cvStartWindowThread();
     }
 
-    running_ = false;
-    StoreTagData(tag_data);
-
     ROS_INFO("AprilTags node started.");
+    running_ = false;
     ros::spin();
     ROS_INFO("AprilTags node stopped.");
 

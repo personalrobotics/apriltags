@@ -43,5 +43,4 @@ void DisconnectHandler();
 void GetParameterValues();
 void SetupPublisher();
 void InitializeTags();
-void StoreTagData(std::string tag_data);
 void InitializeROSNode();
