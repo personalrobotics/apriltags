@@ -43,7 +43,8 @@ double GetTagSize(int tag_id)
     return tag_size;
 }
 
-Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
+Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
+{
     double tag_size = GetTagSize(detection.id);
 
     std::vector<cv::Point3f> object_pts;
@@ -86,8 +87,10 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection){
 
 // Callback for camera info
 void InfoCallback(
-        const sensor_msgs::CameraInfoConstPtr& camera_info){
-    if(running_){
+        const sensor_msgs::CameraInfoConstPtr& camera_info)
+{
+    if(running_)
+    {
         camera_info_ = (*camera_info);
     }
 }
@@ -97,16 +100,19 @@ void ImageCallback(
         const sensor_msgs::ImageConstPtr& msg )
 {
     // Only continue if the node is running
-    if(!running_){
+    if(!running_)
+    {
         return;
     }
     
     // Get the image
     cv_bridge::CvImagePtr subscribed_ptr;
-    try{
+    try
+    {
         subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
     }
-    catch(cv_bridge::Exception& e){
+    catch(cv_bridge::Exception& e)
+    {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
@@ -119,12 +125,13 @@ void ImageCallback(
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     
-    if(viewer_){
+    if(viewer_)
+    {
         subscribed_gray = family_->superimposeDetections(subscribed_gray,
-                                                          detections);
+                                                         detections);
     }
-    for(unsigned int i = 0; i < detections.size(); ++i){
-        
+    for(unsigned int i = 0; i < detections.size(); ++i)
+    {
         Eigen::Matrix4d pose = GetDetectionTransform(detections[i]);
         
         // Get this info from earlier code, don't extract it again
@@ -151,7 +158,7 @@ void ImageCallback(
     	double tag_size = GetTagSize(detections[i].id);
         marker_transform.scale.x = tag_size;
         marker_transform.scale.y = tag_size;
-        marker_transform.scale.z = 0.05 * tag_size;
+        marker_transform.scale.z = 0.01 * tag_size;
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
         marker_transform.color.b = 1.0;
@@ -160,15 +167,17 @@ void ImageCallback(
     }
     marker_publisher_.publish(marker_transforms);
     
-    if(viewer_){
+    if(viewer_)
+    {
         cv::imshow("AprilTags", subscribed_gray);
     }
 }
 
-void ConnectCallback(const ros::SingleSubscriberPublisher& info){
+void ConnectCallback(const ros::SingleSubscriberPublisher& info)
+{
     // Subscribers
     uint32_t subscribers = marker_publisher_.getNumSubscribers();
-    printf("New Subscription Detected to AprilTags!! Now Have %d subscribers\n",subscribers);
+    ROS_INFO("Subscription detected! (%d subscribers)", subscribers);
 
     ros::TransportHints ros_transport_hints(ros::TransportHints().tcpNoDelay());
     image_transport::TransportHints image_transport_hint(image_transport::TransportHints(
@@ -190,18 +199,20 @@ void DisconnectHandler()
     info_subscriber.shutdown();
 }
 
-void DisconnectCallback(const ros::SingleSubscriberPublisher& info){
+void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
+{
     uint32_t subscribers = marker_publisher_.getNumSubscribers();
-    printf("Unsubscription Detected from AprilTags!! Now Have %d subscribers\n",subscribers);
+    ROS_INFO("Unsubscription detected! (%d subscribers)",subscribers);
     
     if(!subscribers)
     {
-        printf("No Subscribers, Disconnecting from Input Image Topic.\n");
+        ROS_INFO("No Subscribers, Disconnecting from Input Image Topic.");
         DisconnectHandler();
     }
 }
 
-void GetParameterValues(){
+void GetParameterValues()
+{
     (*node_).param("viewer", viewer_, 0);
     (*node_).param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     (*node_).param("tag_data", tag_data, string(""));
@@ -209,8 +220,8 @@ void GetParameterValues(){
     (*node_).param("tf_frame", frame_, string("/prosilica_cam"));
 }
 
-void SetupPublisher(){
-    
+void SetupPublisher()
+{    
     ros::SubscriberStatusCallback connect_callback = &ConnectCallback;
     ros::SubscriberStatusCallback disconnect_callback = &DisconnectCallback;
     
@@ -228,7 +239,8 @@ void InitializeTags()
 }
 
 // Store Tag Data
-void StoreTagData(string tag_data){
+void StoreTagData(string tag_data)
+{
     stringstream tag_ss;
     tag_ss << tag_data;
     YAML::Parser parser(tag_ss);
@@ -260,8 +272,8 @@ void InitializeROSNode(int argc, char **argv)
     image_ = boost::make_shared<image_transport::ImageTransport>(*node_);
 }
 
-int main(int argc, char **argv){
-
+int main(int argc, char **argv)
+{
     InitializeROSNode(argc,argv);
     GetParameterValues();
     SetupPublisher();
@@ -274,7 +286,10 @@ int main(int argc, char **argv){
 
     running_ = false;
     StoreTagData(tag_data);
+
+    ROS_INFO("AprilTags node started.");
     ros::spin();
+    ROS_INFO("AprilTags node stopped.");
 
     //Destroying Stuff
     cvDestroyWindow("AprilTags");
