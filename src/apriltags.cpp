@@ -87,11 +87,17 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {
     camera_info_ = (*camera_info);
+    has_camera_info_ = true;
 }
 
 // Callback for image data
 void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
-{    
+{
+    if(!has_camera_info_){
+        ROS_WARN("No Camera Info Received Yet");
+        return;
+    }
+    
     // Get the image
     cv_bridge::CvImagePtr subscribed_ptr;
     try
@@ -207,7 +213,7 @@ void GetParameterValues()
     // Load node-wide configuration values.
     node_->param("viewer", viewer_, 0);
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
-    node_->param("default_tag_size", default_tag_size_, SMALL_TAG_SIZE);
+    node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("tf_frame", frame_, DEFAULT_TF_FRAME);
 
     // Load tag specific configuration values.
@@ -270,6 +276,7 @@ int main(int argc, char **argv)
 
     ROS_INFO("AprilTags node started.");
     running_ = false;
+    has_camera_info_ = false;
     ros::spin();
     ROS_INFO("AprilTags node stopped.");
 
