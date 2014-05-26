@@ -1,7 +1,6 @@
 const double SMALL_TAG_SIZE = 0.0358968;
 const double MED_TAG_SIZE = 0.06096;
 const double PAGE_TAG_SIZE = 0.165;
-const double 
 
 const std::string DEFAULT_TF_FRAME = "/apriltags";
 const std::string DEFAULT_TAG_FAMILY = "Tag36h11";
