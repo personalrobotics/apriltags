@@ -1,13 +1,14 @@
 const double SMALL_TAG_SIZE = 0.0358968;
-const double MED_TAG_SIZE = 0.0630174;
+const double MED_TAG_SIZE = 0.06096;
 const double PAGE_TAG_SIZE = 0.165;
+const double 
 
 const std::string DEFAULT_TF_FRAME = "/apriltags";
 const std::string DEFAULT_TAG_FAMILY = "Tag36h11";
 const std::string DEFAULT_IMAGE_TOPIC = "image";
 const std::string DEFAULT_CAMERA_INFO_TOPIC = "camera_info";
 const std::string DEFAULT_MARKER_TOPIC = "marker_array";
-const double DEFAULT_TAG_SIZE = SMALL_TAG_SIZE;
+const double DEFAULT_TAG_SIZE = MED_TAG_SIZE;
 
 // ROS parts
 ros::NodeHandlePtr node_;
@@ -33,6 +34,7 @@ double default_tag_size_;
 boost::unordered_map<size_t, double> tag_sizes_;
 std::string frame_;
 bool running_;
+bool has_camera_info_;
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
