@@ -4,8 +4,8 @@
        to connect to an OpenNI device (e.g. Kinect). 
   -->
   <node pkg="apriltags" type="apriltags" name="apriltags">
-    <param name="tag_size" value="0.037" />
-    <param name="tf_frame" value="/camera_rgb_optical_frame"/>
+    <param name="~default_tag_size" value="0.037" />
+    <param name="~tf_frame" value="/camera_rgb_optical_frame"/>
 
     <rosparam command="delete" param="tag_data" />
     <rosparam param="tag_data">
@@ -15,8 +15,8 @@
         size: 0.048
     </rosparam>
 
-    <remap from="image" to="/camera/rgb/image_rect"/>
-    <remap from="camera_info" to="/camera/rgb/camera_info"/>
-    <remap from="marker_array" to="/apriltags/marker_array"/>
+    <remap from="~image" to="/camera/rgb/image_rect"/>
+    <remap from="~camera_info" to="/camera/rgb/camera_info"/>
+    <remap from="~marker_array" to="/apriltags/marker_array"/>
   </node>
 </launch>
