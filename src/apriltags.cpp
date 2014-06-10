@@ -150,9 +150,15 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.pose.orientation.w = q.w();
 
     	double tag_size = GetTagSize(detections[i].id);
+        /*
         marker_transform.scale.x = tag_size;
         marker_transform.scale.y = tag_size;
         marker_transform.scale.z = 0.01 * tag_size;
+        */
+        marker_transform.scale.x = 1.0;
+        marker_transform.scale.y = 1.0;
+        marker_transform.scale.z = 1.0;
+        
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
         marker_transform.color.b = 1.0;
