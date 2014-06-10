@@ -55,9 +55,13 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
     object_pts.push_back(cv::Point3f(-tag_radius,  tag_radius, 0));
     
     image_pts.push_back(detection.p[0]);
+    cout << detection.p[0] << endl;
     image_pts.push_back(detection.p[1]);
+    cout << detection.p[1] << endl;
     image_pts.push_back(detection.p[2]);
+    cout << detection.p[2] << endl;
     image_pts.push_back(detection.p[3]);
+    cout << detection.p[3] << endl;
 
     cv::Matx33f intrinsics(camera_info_.K[0], 0, camera_info_.K[2],
                            0, camera_info_.K[4], camera_info_.K[5],
