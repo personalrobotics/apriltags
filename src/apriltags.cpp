@@ -155,9 +155,9 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.scale.y = tag_size;
         marker_transform.scale.z = 0.01 * tag_size;
         */
-        marker_transform.scale.x = tag_size*0.25;
+        marker_transform.scale.x = tag_size;
         marker_transform.scale.y = tag_size*5;
-        marker_transform.scale.z = tag_size;
+        marker_transform.scale.z = tag_size*0.5;
         
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
