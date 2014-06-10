@@ -8,16 +8,19 @@ const std::string DEFAULT_IMAGE_TOPIC = "image";
 const std::string DEFAULT_CAMERA_INFO_TOPIC = "camera_info";
 const std::string DEFAULT_MARKER_TOPIC = "marker_array";
 const double DEFAULT_TAG_SIZE = MED_TAG_SIZE;
+const std::string DEFAULT_DISPLAY_TYPE = "CUBE";
 
 // ROS parts
 ros::NodeHandlePtr node_;
 boost::shared_ptr<image_transport::ImageTransport> image_;
+sensor_msgs::CameraInfo camera_info_;
 
 ros::Publisher marker_publisher_;
 ros::Subscriber info_subscriber;
 image_transport::Subscriber image_subscriber;
 
-sensor_msgs::CameraInfo camera_info_;
+
+
 
 // AprilTag parts
 TagFamily* family_;
@@ -34,6 +37,7 @@ boost::unordered_map<size_t, double> tag_sizes_;
 std::string frame_;
 bool running_;
 bool has_camera_info_;
+std::string display_type_;
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
