@@ -118,8 +118,6 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     
-    cout << tag_size << endl;
-    
     if(viewer_)
     {
         subscribed_gray = family_->superimposeDetections(subscribed_gray,
