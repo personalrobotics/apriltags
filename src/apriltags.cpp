@@ -138,8 +138,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         convert << "tag" << detections[i].id;
         marker_transform.ns = convert.str().c_str();
         marker_transform.id = detections[i].id;
-        marker_transform.type = visualization_msgs::Marker::ARROW;
-        //marker_transform.type = visualization_msgs::Marker::CUBE;
+        //marker_transform.type = visualization_msgs::Marker::ARROW;
+        marker_transform.type = visualization_msgs::Marker::CUBE;
         marker_transform.action = visualization_msgs::Marker::ADD;
         marker_transform.pose.position.x = pose(0,3);
         marker_transform.pose.position.y = pose(1,3);
@@ -150,15 +150,15 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.pose.orientation.w = q.w();
 
     	double tag_size = GetTagSize(detections[i].id);
-        /*
+        
         marker_transform.scale.x = tag_size;
         marker_transform.scale.y = tag_size;
         marker_transform.scale.z = 0.01 * tag_size;
-        */
-        marker_transform.scale.x = tag_size*50;
+        /*
+        marker_transform.scale.x = tag_size;
         marker_transform.scale.y = tag_size*10;
         marker_transform.scale.z = tag_size*0.5;
-        
+        */
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
         marker_transform.color.b = 1.0;
