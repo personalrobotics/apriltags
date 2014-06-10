@@ -138,7 +138,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         convert << "tag" << detections[i].id;
         marker_transform.ns = convert.str().c_str();
         marker_transform.id = detections[i].id;
-        marker_transform.type = visualization_msgs::Marker::CUBE;
+        marker_transform.type = visualization_msgs::Marker::ARROW;
+        //marker_transform.type = visualization_msgs::Marker::CUBE;
         marker_transform.action = visualization_msgs::Marker::ADD;
         marker_transform.pose.position.x = pose(0,3);
         marker_transform.pose.position.y = pose(1,3);
