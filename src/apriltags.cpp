@@ -118,7 +118,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     
-    //cout << tag_size << endl;
+    cout << tag_size << endl;
     
     if(viewer_)
     {
@@ -132,6 +132,9 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         // Get this info from earlier code, don't extract it again
         Eigen::Matrix3d R = pose.block<3,3>(0,0);
         Eigen::Quaternion<double> q(R);
+        
+    	double tag_size = GetTagSize(detections[i].id);
+        cout << tag_size << endl;
         
         visualization_msgs::Marker marker_transform;
         marker_transform.header.frame_id = frame_;
@@ -160,8 +163,6 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.pose.orientation.y = q.y();
         marker_transform.pose.orientation.z = q.z();
         marker_transform.pose.orientation.w = q.w();
-        
-    	double tag_size = GetTagSize(detections[i].id);
         
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
