@@ -118,6 +118,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     
+    cout << tag_size << endl;
+    
     if(viewer_)
     {
         subscribed_gray = family_->superimposeDetections(subscribed_gray,
@@ -138,8 +140,18 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         convert << "tag" << detections[i].id;
         marker_transform.ns = convert.str().c_str();
         marker_transform.id = detections[i].id;
-        //marker_transform.type = visualization_msgs::Marker::ARROW;
-        marker_transform.type = visualization_msgs::Marker::CUBE;
+        if(display_type_ == "ARROW"){
+            marker_transform.type = visualization_msgs::Marker::ARROW;
+            marker_transform.scale.x = tag_size;
+            marker_transform.scale.y = tag_size*10;
+            marker_transform.scale.z = tag_size*0.5;
+        }
+        else if(display_type_ == "CUBE"){
+            marker_transform.type = visualization_msgs::Marker::CUBE;
+            marker_transform.scale.x = tag_size;
+            marker_transform.scale.y = tag_size;
+            marker_transform.scale.z = 0.01 * tag_size;
+        }
         marker_transform.action = visualization_msgs::Marker::ADD;
         marker_transform.pose.position.x = pose(0,3);
         marker_transform.pose.position.y = pose(1,3);
@@ -148,17 +160,9 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.pose.orientation.y = q.y();
         marker_transform.pose.orientation.z = q.z();
         marker_transform.pose.orientation.w = q.w();
-
+        
     	double tag_size = GetTagSize(detections[i].id);
         
-        marker_transform.scale.x = tag_size;
-        marker_transform.scale.y = tag_size;
-        marker_transform.scale.z = 0.01 * tag_size;
-        /*
-        marker_transform.scale.x = tag_size;
-        marker_transform.scale.y = tag_size*10;
-        marker_transform.scale.z = tag_size*0.5;
-        */
         marker_transform.color.r = 1.0;
         marker_transform.color.g = 0.0;
         marker_transform.color.b = 1.0;
@@ -222,6 +226,7 @@ void GetParameterValues()
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("tf_frame", frame_, DEFAULT_TF_FRAME);
+    node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
 
     // Load tag specific configuration values.
     XmlRpc::XmlRpcValue tag_data;
