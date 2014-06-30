@@ -19,9 +19,6 @@ ros::Publisher marker_publisher_;
 ros::Subscriber info_subscriber;
 image_transport::Subscriber image_subscriber;
 
-
-
-
 // AprilTag parts
 TagFamily* family_;
 TagDetector* detector_;
