@@ -1,13 +1,13 @@
 <package>
-  <description brief="apriltags">
-
-     apriltags
-
+  <description brief="ROS wrapper for the Apriltags visual fiducial tracker.">
+     ROS wrapper for the Swatbotics port of the Apriltags visual
+     fiducial tracker.  Apriltags was originally developed by the
+     April laboratory at the University of Michigan.
   </description>
-  <author>Aaron Walsman</author>
+  <author>Aaron Walsman, Pras Velagapudi</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/apriltags_swat</url>
+  <review status="released" notes="derivative work of Swatbotics apriltags-cpp"/>
+  <url>http://github.com/personalrobotics/apriltags</url>
   <rosdep name="opencv2"/>
   <rosdep name="yaml-cpp"/>
   <rosdep name="eigen"/>

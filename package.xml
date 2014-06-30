@@ -5,9 +5,10 @@
   <description>
      C++ port of the AprilTags library, using OpenCV (and optionally, CGAL)
   </description>
-  <url type="website">https://personalrobotics.ri.cmu.edu/pr-ros-pkg/perception_utils/apriltags/html/</url>
-  <url type="repository">https://svn.personalrobotics.ri.cmu.edu/pr-ros-pkg/trunk/perception_utils/apriltags/</url>
+  <url type="repository">https://github.com/personalrobotics/apriltags</url>
   <maintainer email="awalsman@andrew.cmu.edu">Aaron Walsman</maintainer>
+  <author email="awalsman@andrew.cmu.edu">Aaron Walsman</author>
+  <author email="pkv@cs.cmu.edu">Pras Velagapudi</author>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>cv_bridge</build_depend>
