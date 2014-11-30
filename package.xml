@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>apriltags</name>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>
     ROS wrapper for the Swatbotics C++ port of the Apriltags visual
     fiducial tracker.  Apriltags was originally developed by the April
