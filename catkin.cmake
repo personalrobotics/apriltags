@@ -5,16 +5,39 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   image_transport
   roscpp
+  cmake_modules
+  message_generation
+  geometry_msgs
 )
 find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
 
-# Set up the ROS Catkin package settings.
-catkin_package()
-
 # Import the yaml-cpp libraries.
 include(FindPkgConfig)
 pkg_check_modules(Yaml REQUIRED yaml-cpp)
+
+add_message_files(DIRECTORY msg FILES
+    AprilTagDetection.msg
+    AprilTagDetections.msg
+)
+
+generate_messages(DEPENDENCIES
+    std_msgs
+    geometry_msgs
+)
+
+# Set up the ROS Catkin package settings
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS cv_bridge
+                 std_msgs
+                 sensor_msgs
+                 image_transport
+                 roscpp
+                 cmake_modules
+                 message_generation
+                 geometry_msgs
+)
 
 # CGAL requires that -frounding-math be set.
 add_definitions(-frounding-math)
@@ -62,6 +85,7 @@ target_link_libraries(apriltags ${Eigen_LIBRARIES})
 target_link_libraries(apriltags ${OpenCV_LIBRARIES})
 target_link_libraries(apriltags ${Yaml_LIBRARIES})
 target_link_libraries(apriltags apriltags_swatbotics)
+add_dependencies(apriltags ${PROJECT_NAME}_gencpp)
 
 install(TARGETS apriltags
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} 
