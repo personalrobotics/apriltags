@@ -54,6 +54,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <boost/make_shared.hpp>
 
 #include "apriltags.h"
+#include <apriltags/AprilTagDetections.h>
+
 
 using namespace std;
 
@@ -120,13 +122,13 @@ void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 }
 
 // Callback for image data
-void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
+void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
     if(!has_camera_info_){
         ROS_WARN("No Camera Info Received Yet");
         return;
     }
-    
+
     // Get the image
     cv_bridge::CvImagePtr subscribed_ptr;
     try
@@ -146,6 +148,9 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
     TagDetectionArray detections;
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
+    apriltags::AprilTagDetections apriltag_detections;
+    apriltag_detections.header.frame_id = frame_;
+    apriltag_detections.header.stamp = msg->header.stamp;
     
     if(viewer_)
     {
@@ -154,6 +159,12 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
     }
     for(unsigned int i = 0; i < detections.size(); ++i)
     {
+        // skip bad detections
+        if(!detections[i].good)
+        {
+            continue;
+        }
+        
         Eigen::Matrix4d pose = GetDetectionTransform(detections[i]);
         
         // Get this info from earlier code, don't extract it again
@@ -165,7 +176,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         
         visualization_msgs::Marker marker_transform;
         marker_transform.header.frame_id = frame_;
-        marker_transform.header.stamp = ros::Time::now();
+        marker_transform.header.stamp = msg->header.stamp;
         stringstream convert;
         convert << "tag" << detections[i].id;
         marker_transform.ns = convert.str().c_str();
@@ -196,8 +207,26 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
         marker_transform.color.b = 1.0;
         marker_transform.color.a = 1.0;
         marker_transforms.markers.push_back(marker_transform);
+        
+        // Fill in AprilTag detection.
+        apriltags::AprilTagDetection apriltag_det;
+        apriltag_det.header = marker_transform.header;
+        apriltag_det.id = marker_transform.id;
+        apriltag_det.tag_size = tag_size;
+        apriltag_det.pose = marker_transform.pose;
+        const TagDetection &det = detections[i];
+        for(uint pt_i = 0; pt_i < 4; ++pt_i)
+        {
+            geometry_msgs::Point32 img_pt;
+            img_pt.x = det.p[pt_i].x;
+            img_pt.y = det.p[pt_i].y;
+            img_pt.z = 1;
+            apriltag_det.corners2d[pt_i] = img_pt;
+        }
+        apriltag_detections.detections.push_back(apriltag_det);
     }
     marker_publisher_.publish(marker_transforms);
+    apriltag_publisher_.publish(apriltag_detections);
     
     if(viewer_)
     {
@@ -208,7 +237,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg )
 void ConnectCallback(const ros::SingleSubscriberPublisher& info)
 {
     // Check for subscribers.
-    uint32_t subscribers = marker_publisher_.getNumSubscribers();
+    uint32_t subscribers = marker_publisher_.getNumSubscribers()
+                           + apriltag_publisher_.getNumSubscribers();
     ROS_DEBUG("Subscription detected! (%d subscribers)", subscribers);
 
     if(subscribers && !running_)
@@ -235,15 +265,16 @@ void DisconnectHandler()
 void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
 {
     // Check for subscribers.
-    uint32_t subscribers = marker_publisher_.getNumSubscribers();
+    uint32_t subscribers = marker_publisher_.getNumSubscribers()
+                           + apriltag_publisher_.getNumSubscribers();
     ROS_DEBUG("Unsubscription detected! (%d subscribers)", subscribers);
     
     if(!subscribers && running_)
     {
         ROS_DEBUG("No Subscribers, Disconnecting from Input Image Topic.");
-		image_subscriber.shutdown();
-		info_subscriber.shutdown();
-		running_ = false;
+        image_subscriber.shutdown();
+        info_subscriber.shutdown();
+        running_ = false;
     }
 }
 
@@ -255,6 +286,8 @@ void GetParameterValues()
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("tf_frame", frame_, DEFAULT_TF_FRAME);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
+
+    ROS_INFO("Tag Family: %s", tag_family_name_.c_str());
 
     // Load tag specific configuration values.
     XmlRpc::XmlRpcValue tag_data;
@@ -286,6 +319,8 @@ void SetupPublisher()
     marker_publisher_ = node_->advertise<visualization_msgs::MarkerArray>(
             DEFAULT_MARKER_TOPIC, 1, connect_callback,
             disconnect_callback);
+    apriltag_publisher_ = node_->advertise<apriltags::AprilTagDetections>(
+            DEFAULT_DETECTIONS_TOPIC, 1, connect_callback, disconnect_callback);
 }
 
 void InitializeTags()

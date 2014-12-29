@@ -18,5 +18,6 @@
     <remap from="~image" to="/camera/rgb/image_rect"/>
     <remap from="~camera_info" to="/camera/rgb/camera_info"/>
     <remap from="~marker_array" to="/apriltags/marker_array"/>
+    <remap from="~detections" to="/apriltags/detections"/>
   </node>
 </launch>
