@@ -1,6 +1,6 @@
 apriltags
 =========
-test
+
 ROS wrapper for the Swatbotics C++ port of the Apriltags visual
 fiducial tracker (http://github.com/swatbotics/apriltags-cpp).
 
