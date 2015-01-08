@@ -1,0 +1,36 @@
+<launch>        
+  <!-- 
+       Start an apriltag node using the default settings
+       to connect to an OpenNI device (e.g. Kinect). 
+  -->
+  <node pkg="apriltags" type="apriltags" name="apriltags" output="screen">
+    <param name="~default_tag_size" value="0.0254" />
+    <param name="~tf_frame" value="base_rgbd_camera_link"/>
+    
+    
+    <rosparam param="tag_data">
+      "1": 
+        size: 0.06096
+      "145":
+        size: 0.0508
+      "112":
+        size: 0.048
+      "116":
+        size: 0.048
+      "119":
+        size: 0.048
+      "141":
+        size: 0.048
+      "142":
+        size: 0.048
+    </rosparam>
+    
+    
+    <remap from="~image" to="/softkinetic_driver/rgb/image"/>
+    <remap from="~camera_info" to="/softkinetic_driver/rgb/camera_info"/>
+    <!--
+    <remap from="~marker_array" to="/apriltags/marker_array"/>
+    -->
+    
+  </node>
+</launch>

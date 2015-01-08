@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find apriltags)/launch/_launch.apriltags_softkinetic"/>
+    <include file="$(find apriltags)/launch/_launch.object_pose_markerarray"/>
+</launch>

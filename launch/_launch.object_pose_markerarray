@@ -1,0 +1,10 @@
+<launch>        
+  <!-- 
+       Start an apriltag node using the default settings
+       to connect to an OpenNI device (e.g. Kinect). 
+  -->
+  <node pkg="object_pose_markerarray" type="object_poses.py" name="object_pose_markerarray" output="screen">
+  <remap from ="~marker_array" to="/apriltags/marker_array"/>    
+  
+  </node>
+</launch>
