@@ -17,3 +17,4 @@ if (DEFINED CATKIN_TOPLEVEL OR (NOT ("$ENV{ROS_DISTRO}" STREQUAL "fuerte")))
 else ()
     include(${PROJECT_SOURCE_DIR}/rosbuild.cmake)
 endif ()
+ 
