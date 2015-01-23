@@ -149,7 +149,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     apriltags::AprilTagDetections apriltag_detections;
-    apriltag_detections.header.frame_id = frame_;
+    apriltag_detections.header.frame_id = msg->header.frame_id;
     apriltag_detections.header.stamp = msg->header.stamp;
     
     if(viewer_)
@@ -175,7 +175,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         cout << tag_size << " " << detections[i].id << endl;
         
         visualization_msgs::Marker marker_transform;
-        marker_transform.header.frame_id = frame_;
+        marker_transform.header.frame_id = msg->header.frame_id;
         marker_transform.header.stamp = msg->header.stamp;
         stringstream convert;
         convert << "tag" << detections[i].id;
@@ -284,7 +284,6 @@ void GetParameterValues()
     node_->param("viewer", viewer_, 0);
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
-    node_->param("tf_frame", frame_, DEFAULT_TF_FRAME);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
 
     ROS_INFO("Tag Family: %s", tag_family_name_.c_str());
