@@ -2,7 +2,6 @@ const double SMALL_TAG_SIZE = 0.0358968;
 const double MED_TAG_SIZE = 0.06096;
 const double PAGE_TAG_SIZE = 0.165;
 
-const std::string DEFAULT_TF_FRAME = "/apriltags";
 const std::string DEFAULT_TAG_FAMILY = "Tag36h11";
 const std::string DEFAULT_IMAGE_TOPIC = "image";
 const std::string DEFAULT_CAMERA_INFO_TOPIC = "camera_info";
@@ -33,7 +32,6 @@ std::string tag_family_name_;
 int viewer_;
 double default_tag_size_;
 boost::unordered_map<size_t, double> tag_sizes_;
-std::string frame_;
 bool running_;
 bool has_camera_info_;
 std::string display_type_;
