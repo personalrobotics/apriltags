@@ -34,8 +34,6 @@ catkin_package(
                  sensor_msgs
                  image_transport
                  roscpp
-                 cmake_modules
-                 message_generation
                  geometry_msgs
 )
 
