@@ -19,6 +19,7 @@
   <build_depend>eigen</build_depend>
   <build_depend>git</build_depend>
   <build_depend>message_generation</build_depend>
+  <depend>cgal</depend>
   <depend>cv_bridge</depend>
   <depend>geometry_msgs</depend>
   <depend>image_transport</depend>
