@@ -36,16 +36,16 @@ There are *.tgz files for each family, including a *.ps file with one tag per pa
 Edit the launch file `apriltags.launch`
 
 Set the default tag file parameter  
-> <param name="~default_tag_size" value="0.046" />
+> param name="~default_tag_size" value="0.046"
 to be the width of the black square of the tags you printed out e.g. 46mm
 
 If your webcam does not publish images to the default topic name, you may need to edit these 2 parameters:  
-> <remap from="~image" to="/camera/rgb/image_rect"/>
-> <remap from="~camera_info" to="/camera/rgb/camera_info"/>
+> remap from="~image" to="/camera/rgb/image_rect"
+> remap from="~camera_info" to="/camera/rgb/camera_info"
 
 For the Kinect2, they should be set too:  
-> <remap from="~image" to="/kinect2/hd/image_color_rect"/>
-> <remap from="~camera_info" to="/kinect2/hd/camera_info"/>
+> remap from="~image" to="/kinect2/hd/image_color_rect"
+> remap from="~camera_info" to="/kinect2/hd/camera_info"
 
 **Usage**
 
