@@ -177,6 +177,11 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         visualization_msgs::Marker marker_transform;
         marker_transform.header.frame_id = msg->header.frame_id;
         marker_transform.header.stamp = msg->header.stamp;
+
+        // Only publish marker for 0.5 seconds after it
+        // was last seen
+        marker_transform.lifetime = ros::Duration(0.5);
+
         stringstream convert;
         convert << "tag" << detections[i].id;
         marker_transform.ns = convert.str().c_str();
