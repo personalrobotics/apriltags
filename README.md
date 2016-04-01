@@ -50,8 +50,8 @@ For the Kinect2, they should be set too:
 
 **Usage**
 
-> roslaunch apriltags apriltags.launch  
+> $ roslaunch apriltags apriltags.launch  
 
 To check if the node can detect your printed tag:  
-> rostopic echo /apriltags/detections  
+> $ rostopic echo /apriltags/detections  
 
