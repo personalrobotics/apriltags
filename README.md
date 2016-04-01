@@ -14,7 +14,7 @@ E. Olson, *"AprilTag: A robust and flexible visual fiducial system"*, IEEE Inter
 **Installation**
 
 Install dependencies:  
-> sudo aptitude install libcgal-dev
+> $ sudo aptitude install libcgal-dev
 
 Clone this repo into your catkin workspace and build.
 
@@ -24,8 +24,8 @@ Clone this repo into your catkin workspace and build.
 Images of the default tag family can be found in `tags/36h11.ps`
 
 To open this postscript file:  
-> sudo apt-get install gv  
-> gv 36h11.ps  
+> $ sudo apt-get install gv  
+> $ gv 36h11.ps  
 
 Alternatively you can download images of the tags from here:  
 https://april.eecs.umich.edu/wiki/index.php/AprilTags  
