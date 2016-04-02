@@ -189,15 +189,15 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         marker_transform.id = detections[i].id;
         if(display_type_ == "ARROW"){
             marker_transform.type = visualization_msgs::Marker::ARROW;
-            marker_transform.scale.x = tag_size;
-            marker_transform.scale.y = tag_size*10;
-            marker_transform.scale.z = tag_size*0.5;
+            marker_transform.scale.x = tag_size; // arrow length
+            marker_transform.scale.y = tag_size/10.0; // diameter
+            marker_transform.scale.z = tag_size/10.0; // diameter
         }
         else if(display_type_ == "CUBE"){
             marker_transform.type = visualization_msgs::Marker::CUBE;
             marker_transform.scale.x = tag_size;
             marker_transform.scale.y = tag_size;
-            marker_transform.scale.z = 0.01 * tag_size;
+            marker_transform.scale.z = marker_thickness_;
         }
         marker_transform.action = visualization_msgs::Marker::ADD;
         marker_transform.pose.position.x = pose(0,3);
@@ -298,6 +298,7 @@ void GetParameterValues()
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
+    node_->param("marker_thickness", marker_thickness_, 0.01);
 
     ROS_INFO("Tag Family: %s", tag_family_name_.c_str());
 
