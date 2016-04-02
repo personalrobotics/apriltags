@@ -32,7 +32,9 @@ std::string tag_family_name_;
 
 // Settings and local information
 int viewer_;
+int publish_detections_image_;
 double default_tag_size_;
+double marker_thickness_;
 boost::unordered_map<size_t, double> tag_sizes_;
 bool running_;
 bool has_camera_info_;
