@@ -133,7 +133,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvImagePtr subscribed_ptr;
     try
     {
-        subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
+        //subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
+        subscribed_ptr = cv_bridge::toCvCopy(msg, "bgr8");
     }
     catch(cv_bridge::Exception& e)
     {
@@ -171,7 +172,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         Eigen::Matrix3d R = pose.block<3,3>(0,0);
         Eigen::Quaternion<double> q(R);
         
-    	double tag_size = GetTagSize(detections[i].id);
+        double tag_size = GetTagSize(detections[i].id);
         cout << tag_size << " " << detections[i].id << endl;
         
         visualization_msgs::Marker marker_transform;
@@ -232,7 +233,13 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
     marker_publisher_.publish(marker_transforms);
     apriltag_publisher_.publish(apriltag_detections);
-    
+
+    if(publish_detections_image_)
+    {
+        subscribed_ptr->image = family_->superimposeDetections(subscribed_ptr->image, detections);
+        image_publisher_.publish(subscribed_ptr->toImageMsg());
+    }
+
     if(viewer_)
     {
         cv::imshow("AprilTags", subscribed_gray);
@@ -287,6 +294,7 @@ void GetParameterValues()
 {
     // Load node-wide configuration values.
     node_->param("viewer", viewer_, 0);
+    node_->param("publish_detections_image", publish_detections_image_, 0);
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
@@ -325,6 +333,11 @@ void SetupPublisher()
             disconnect_callback);
     apriltag_publisher_ = node_->advertise<apriltags::AprilTagDetections>(
             DEFAULT_DETECTIONS_TOPIC, 1, connect_callback, disconnect_callback);
+
+    if(publish_detections_image_)
+    {
+        image_publisher_ = (*image_).advertise(DEFAULT_DETECTIONS_IMAGE_TOPIC, 1);
+    }
 }
 
 void InitializeTags()
