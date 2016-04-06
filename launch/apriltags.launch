@@ -3,7 +3,7 @@
        Start an apriltag node using the default settings
        to connect to an OpenNI device (e.g. Kinect). 
   -->
-  <node pkg="apriltags" type="apriltags" name="apriltags">
+  <node pkg="apriltags" type="apriltags" name="apriltags" output="screen">
     <param name="~default_tag_size" value="0.037" />
 
     <param name="~viewer" value="false" />
