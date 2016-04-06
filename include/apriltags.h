@@ -31,8 +31,8 @@ std::string tag_data;
 std::string tag_family_name_;
 
 // Settings and local information
-int viewer_;
-int publish_detections_image_;
+bool viewer_;
+bool publish_detections_image_;
 double default_tag_size_;
 double marker_thickness_;
 boost::unordered_map<size_t, double> tag_sizes_;

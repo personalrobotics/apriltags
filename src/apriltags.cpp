@@ -292,8 +292,8 @@ void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
 void GetParameterValues()
 {
     // Load node-wide configuration values.
-    node_->param("viewer", viewer_, 0);
-    node_->param("publish_detections_image", publish_detections_image_, 0);
+    node_->param("viewer", viewer_, false);
+    node_->param("publish_detections_image", publish_detections_image_, false);
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
