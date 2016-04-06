@@ -74,6 +74,12 @@ double GetTagSize(int tag_id)
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
 {
+    // Check if fx,fy or cx,cy are not set
+    if ((camera_info_.K[0] == 0.0) || (camera_info_.K[4] == 0.0) || (camera_info_.K[2] == 0.0) || (camera_info_.K[5] == 0.0))
+    {
+        ROS_WARN("Warning: Camera intrinsic matrix K is not set, can't recover 3D pose");
+    }
+
     double tag_size = GetTagSize(detection.id);
 
     std::vector<cv::Point3f> object_pts;
