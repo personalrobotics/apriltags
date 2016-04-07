@@ -139,7 +139,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     cv_bridge::CvImagePtr subscribed_ptr;
     try
     {
-        subscribed_ptr = cv_bridge::toCvCopy(msg, "bgr8");
+        subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
     }
     catch(cv_bridge::Exception& e)
     {
