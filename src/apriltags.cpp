@@ -149,8 +149,18 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     
     cv::Mat subscribed_gray = subscribed_ptr->image;
     cv::Mat tmp;
-    cv::Point2d opticalCenter(0.5*subscribed_gray.rows,
-                              0.5*subscribed_gray.cols);
+    cv::Point2d opticalCenter;
+
+    if ((camera_info_.K[2] > 1.0) && (camera_info_.K[5] > 1.0))
+    {
+        // cx,cy from intrinsic matric look reasonable, so we'll use that
+        opticalCenter = cv::Point2d(camera_info_.K[5], camera_info_.K[2]);
+    }
+    else
+    {
+        opticalCenter = cv::Point2d(0.5*subscribed_gray.rows, 0.5*subscribed_gray.cols);
+    }
+
     TagDetectionArray detections;
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
