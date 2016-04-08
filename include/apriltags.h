@@ -51,6 +51,7 @@ void DrawMarkerAxes(const cv::Matx33f& intrinsic_matrix, const cv::Vec4f& distor
                     cv::Mat& image);
 void DrawMarkerOutline(const TagDetection& detection, const cv::Scalar outline_color, cv::Mat& image);
 void DrawMarkerEdges(const TagDetection& detection, cv::Mat& image);
+void DrawMarkerID(const TagDetection& detection, const cv::Scalar text_color, cv::Mat& image);
 
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);

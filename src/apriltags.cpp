@@ -208,6 +208,23 @@ void DrawMarkerEdges(const TagDetection& detection, cv::Mat& image)
     }
 }
 
+// Draw the marker's ID number
+void DrawMarkerID(const TagDetection& detection, const cv::Scalar text_color, cv::Mat& image)
+{
+    cv::Point2f center(0,0);
+    for(int i = 0; i < 4; i++)
+    {
+        center += cv::Point2f(detection.p[i].x, detection.p[i].y);
+    }
+    center.x = center.x / 4.0;
+    center.y = center.y / 4.0;
+    std::stringstream s;
+    s << "  " << detection.id; // move label away from origin
+    const double font_scale = 0.5;
+    const int thickness = 2;
+    cv::putText(image, s.str(), center, cv::FONT_HERSHEY_SIMPLEX, font_scale, text_color, thickness);
+}
+
 // Callback for camera info
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {
