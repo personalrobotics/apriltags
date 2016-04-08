@@ -148,7 +148,6 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
     
     cv::Mat subscribed_gray = subscribed_ptr->image;
-    cv::Mat tmp;
     cv::Point2d opticalCenter;
 
     if ((camera_info_.K[2] > 1.0) && (camera_info_.K[5] > 1.0))
