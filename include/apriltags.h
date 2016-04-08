@@ -43,6 +43,14 @@ std::string display_type_;
 bool display_marker_overlay_;
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
+
+void ArrowLine(cv::Mat& image, const cv::Point& pt1, const cv::Point& pt2, const cv::Scalar& color,
+               const int thickness, const int line_type, const int shift, const double tip_length);
+void DrawMarkerAxes(const cv::Matx33f& intrinsic_matrix, const cv::Vec4f& distortion_coeffs,
+                    const cv::Mat& rvec, const cv::Mat& tvec, const float length, const bool use_arrows,
+                    cv::Mat& image);
+
+
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void ConnectCallback(const ros::SingleSubscriberPublisher& info);

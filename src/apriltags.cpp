@@ -120,6 +120,55 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
     return T;
 }
 
+// Draw a line with an arrow head
+// This function's argument list is designed to match the cv::line() function
+void ArrowLine(cv::Mat& image,
+               const cv::Point& pt1, const cv::Point& pt2, const cv::Scalar& color,
+               const int thickness=1, const int line_type=8, const int shift=0,
+               const double tip_length=0.1)
+{
+    // Normalize the size of the tip depending on the length of the arrow
+    const double tip_size = norm(pt1-pt2)*tip_length;
+
+    cv::line(image, pt1, pt2, color, thickness, line_type, shift);
+    const double angle = atan2(double(pt1.y - pt2.y), double(pt1.x - pt2.x));
+    cv::Point p(cvRound(pt2.x + tip_size * cos(angle + CV_PI / 4.0)),
+    cvRound(pt2.y + tip_size * sin(angle + CV_PI / 4.0)));
+    cv::line(image, p, pt2, color, thickness, line_type, shift);
+    p.x = cvRound(pt2.x + tip_size * cos(angle - CV_PI / 4.0));
+    p.y = cvRound(pt2.y + tip_size * sin(angle - CV_PI / 4.0));
+    cv::line(image, p, pt2, color, thickness, line_type, shift);
+}
+
+// Draw the marker's axes with red/green/blue lines
+void DrawMarkerAxes(const cv::Matx33f& intrinsic_matrix, const cv::Vec4f& distortion_coeffs,
+                    const cv::Mat& rvec, const cv::Mat& tvec, const float length, const bool use_arrows,
+                    cv::Mat& image)
+{
+    std::vector<cv::Point3f> axis_points;
+    axis_points.push_back(cv::Point3f(0, 0, 0));
+    axis_points.push_back(cv::Point3f(length, 0, 0));
+    axis_points.push_back(cv::Point3f(0, length, 0));
+    axis_points.push_back(cv::Point3f(0, 0, length));
+    std::vector<cv::Point2f> image_points;
+    cv::projectPoints(axis_points, rvec, tvec, intrinsic_matrix, distortion_coeffs, image_points);
+
+    // Draw axis lines
+    const int thickness = 2;
+    if (use_arrows)
+    {
+        ArrowLine(image, image_points[0], image_points[1], cv::Scalar(0, 0, 255), thickness);
+        ArrowLine(image, image_points[0], image_points[2], cv::Scalar(0, 255, 0), thickness);
+        ArrowLine(image, image_points[0], image_points[3], cv::Scalar(255, 0, 0), thickness);
+    }
+    else
+    {
+        cv::line(image, image_points[0], image_points[1], cv::Scalar(0, 0, 255), thickness);
+        cv::line(image, image_points[0], image_points[2], cv::Scalar(0, 255, 0), thickness);
+        cv::line(image, image_points[0], image_points[3], cv::Scalar(255, 0, 0), thickness);
+    }
+}
+
 // Callback for camera info
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {
