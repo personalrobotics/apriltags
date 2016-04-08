@@ -169,6 +169,25 @@ void DrawMarkerAxes(const cv::Matx33f& intrinsic_matrix, const cv::Vec4f& distor
     }
 }
 
+// Draw the outline of the square marker in a single color,
+// with a mark on the first corner
+void DrawMarkerOutline(const TagDetection& detection, const cv::Scalar outline_color, cv::Mat& image)
+{
+    // Draw outline
+    const int outline_thickness = 2;
+    for(int i = 0; i < 4; i++) {
+        cv::Point2f p0(detection.p[i].x, detection.p[i].y);
+        cv::Point2f p1(detection.p[(i + 1) % 4].x, detection.p[(i + 1) % 4].y);
+        cv::line(image, p0, p1, outline_color, outline_thickness);
+    }
+    // Indicate first corner with a small rectangle
+    const int width = 6;
+    const int rect_thickness = 1;
+    cv::Point2f p0(detection.p[0].x - width/2, detection.p[0].y - width/2);
+    cv::Point2f p1(detection.p[0].x + width/2, detection.p[0].y + width/2);
+    cv::rectangle(image, p0, p1, outline_color, rect_thickness, CV_AA); // anti-aliased
+}
+
 // Callback for camera info
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {

@@ -49,7 +49,7 @@ void ArrowLine(cv::Mat& image, const cv::Point& pt1, const cv::Point& pt2, const
 void DrawMarkerAxes(const cv::Matx33f& intrinsic_matrix, const cv::Vec4f& distortion_coeffs,
                     const cv::Mat& rvec, const cv::Mat& tvec, const float length, const bool use_arrows,
                     cv::Mat& image);
-
+void DrawMarkerOutline(const TagDetection& detection, const cv::Scalar outline_color, cv::Mat& image);
 
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
