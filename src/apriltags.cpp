@@ -188,6 +188,26 @@ void DrawMarkerOutline(const TagDetection& detection, const cv::Scalar outline_c
     cv::rectangle(image, p0, p1, outline_color, rect_thickness, CV_AA); // anti-aliased
 }
 
+// Draw the four edges of the marker in separate colors
+// to show the ordering of corner points
+void DrawMarkerEdges(const TagDetection& detection, cv::Mat& image)
+{
+    // Draw edges
+    std::vector<cv::Scalar> colors;
+
+    colors.push_back(cv::Scalar(0,0,255)); // red (BGR ordering)
+    colors.push_back(cv::Scalar(0,255,0)); // green
+    colors.push_back(cv::Scalar(255,0,0)); // blue
+    colors.push_back(cv::Scalar(0,204,255)); // yellow
+
+    const int edge_thickness = 2;
+    for(int i = 0; i < 4; i++) {
+        cv::Point2f p0(detection.p[i].x, detection.p[i].y);
+        cv::Point2f p1(detection.p[(i + 1) % 4].x, detection.p[(i + 1) % 4].y);
+        cv::line(image, p0, p1, colors[i], edge_thickness);
+    }
+}
+
 // Callback for camera info
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
 {
