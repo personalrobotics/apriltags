@@ -160,18 +160,34 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         opticalCenter = cv::Point2d(0.5*subscribed_gray.rows, 0.5*subscribed_gray.cols);
     }
 
+    // Detect AprilTag markers in the image
     TagDetectionArray detections;
     detector_->process(subscribed_gray, opticalCenter, detections);
     visualization_msgs::MarkerArray marker_transforms;
     apriltags::AprilTagDetections apriltag_detections;
     apriltag_detections.header.frame_id = msg->header.frame_id;
     apriltag_detections.header.stamp = msg->header.stamp;
-    
-    if(viewer_)
+
+    cv_bridge::CvImagePtr subscribed_color_ptr;
+    if ((viewer_) || (publish_detections_image_))
     {
-        subscribed_gray = family_->superimposeDetections(subscribed_gray,
-                                                         detections);
+        try
+        {
+            subscribed_color_ptr = cv_bridge::toCvCopy(msg, "bgr8");
+        }
+        catch(cv_bridge::Exception& e)
+        {
+            ROS_ERROR("cv_bridge exception: %s", e.what());
+            return;
+        }
+
+        if (display_marker_overlay_)
+        {
+            // Overlay a black&white marker for each detection
+            subscribed_color_ptr->image = family_->superimposeDetections(subscribed_color_ptr->image, detections);
+        }
     }
+
     for(unsigned int i = 0; i < detections.size(); ++i)
     {
         // skip bad detections
@@ -189,6 +205,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         double tag_size = GetTagSize(detections[i].id);
         cout << tag_size << " " << detections[i].id << endl;
         
+        // Fill in MarkerArray msg
         visualization_msgs::Marker marker_transform;
         marker_transform.header.frame_id = msg->header.frame_id;
         marker_transform.header.stamp = msg->header.stamp;
@@ -250,13 +267,12 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     if(publish_detections_image_)
     {
-        subscribed_ptr->image = family_->superimposeDetections(subscribed_ptr->image, detections);
-        image_publisher_.publish(subscribed_ptr->toImageMsg());
+        image_publisher_.publish(subscribed_color_ptr->toImageMsg());
     }
 
     if(viewer_)
     {
-        cv::imshow("AprilTags", subscribed_gray);
+        cv::imshow("AprilTags", subscribed_color_ptr->image);
     }
 }
 
@@ -307,12 +323,14 @@ void DisconnectCallback(const ros::SingleSubscriberPublisher& info)
 void GetParameterValues()
 {
     // Load node-wide configuration values.
-    node_->param("viewer", viewer_, false);
-    node_->param("publish_detections_image", publish_detections_image_, false);
     node_->param("tag_family", tag_family_name_, DEFAULT_TAG_FAMILY);
     node_->param("default_tag_size", default_tag_size_, DEFAULT_TAG_SIZE);
     node_->param("display_type", display_type_, DEFAULT_DISPLAY_TYPE);
     node_->param("marker_thickness", marker_thickness_, 0.01);
+
+    node_->param("viewer", viewer_, false);
+    node_->param("publish_detections_image", publish_detections_image_, false);
+    node_->param("display_marker_overlay", display_marker_overlay_, true);
 
     ROS_INFO("Tag Family: %s", tag_family_name_.c_str());
 

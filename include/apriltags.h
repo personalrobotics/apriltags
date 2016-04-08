@@ -40,6 +40,8 @@ bool running_;
 bool has_camera_info_;
 std::string display_type_;
 
+bool display_marker_overlay_;
+
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
 void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info);
