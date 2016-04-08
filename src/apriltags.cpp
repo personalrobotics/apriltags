@@ -99,11 +99,11 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
     cv::Matx33f intrinsics(camera_info_.K[0], 0, camera_info_.K[2],
                            0, camera_info_.K[4], camera_info_.K[5],
                            0, 0, 1);
+    cv::Vec4f distortion_coeff(camera_info_.D[0], camera_info_.D[1], camera_info_.D[2], camera_info_.D[3]);
     
     cv::Mat rvec, tvec;
-    cv::Vec4f dist_param(0,0,0,0);
-    cv::solvePnP(object_pts, image_pts, intrinsics, dist_param,
-            rvec, tvec);
+    cv::solvePnP(object_pts, image_pts, intrinsics, distortion_coeff, rvec, tvec);
+
     cv::Matx33d r;
     cv::Rodrigues(rvec, r);
     Eigen::Matrix3d rot;
