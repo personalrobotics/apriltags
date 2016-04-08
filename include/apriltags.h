@@ -41,6 +41,10 @@ bool has_camera_info_;
 std::string display_type_;
 
 bool display_marker_overlay_;
+bool display_marker_outline_;
+bool display_marker_id_;
+bool display_marker_edges_;
+bool display_marker_axes_;
 
 Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
 

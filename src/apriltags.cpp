@@ -366,6 +366,39 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
             apriltag_det.corners2d[pt_i] = img_pt;
         }
         apriltag_detections.detections.push_back(apriltag_det);
+
+        if ((viewer_) || (publish_detections_image_))
+        {
+            if (display_marker_outline_)
+            {
+                cv::Scalar outline_color(0, 0, 255); // blue (BGR ordering)
+                DrawMarkerOutline(detections[i], outline_color, subscribed_color_ptr->image);
+            }
+
+            if (display_marker_id_)
+            {
+                cv::Scalar text_color(255, 255, 0); // light-blue (BGR ordering)
+                DrawMarkerID(detections[i], text_color, subscribed_color_ptr->image);
+            }
+
+            if (display_marker_edges_)
+            {
+                DrawMarkerEdges(detections[i], subscribed_color_ptr->image);
+            }
+
+            if (display_marker_axes_)
+            {
+                cv::Matx33f intrinsics(camera_info_.K[0], 0, camera_info_.K[2],
+                                       0, camera_info_.K[4], camera_info_.K[5],
+                                       0, 0, 1);
+                cv::Vec4f distortion_coeff(camera_info_.D[0], camera_info_.D[1],
+                                           camera_info_.D[2], camera_info_.D[3]);
+                double axis_length = tag_size;
+                const bool draw_arrow_heads = true;
+                DrawMarkerAxes(intrinsics, distortion_coeff, rvec, tvec, axis_length,
+                               draw_arrow_heads, subscribed_color_ptr->image);
+            }
+        }
     }
     marker_publisher_.publish(marker_transforms);
     apriltag_publisher_.publish(apriltag_detections);
@@ -436,6 +469,10 @@ void GetParameterValues()
     node_->param("viewer", viewer_, false);
     node_->param("publish_detections_image", publish_detections_image_, false);
     node_->param("display_marker_overlay", display_marker_overlay_, true);
+    node_->param("display_marker_outline", display_marker_outline_, false);
+    node_->param("display_marker_id", display_marker_id_, false);
+    node_->param("display_marker_edges", display_marker_edges_, false);
+    node_->param("display_marker_axes", display_marker_axes_, false);
 
     ROS_INFO("Tag Family: %s", tag_family_name_.c_str());
 
