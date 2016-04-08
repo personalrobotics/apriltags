@@ -46,7 +46,7 @@ bool display_marker_id_;
 bool display_marker_edges_;
 bool display_marker_axes_;
 
-Eigen::Matrix4d GetDetectionTransform(TagDetection detection);
+void GetMarkerTransformUsingOpenCV(const TagDetection& detection, Eigen::Matrix4d& transform, cv::Mat& rvec, cv::Mat& tvec);
 
 void ArrowLine(cv::Mat& image, const cv::Point& pt1, const cv::Point& pt2, const cv::Scalar& color,
                const int thickness, const int line_type, const int shift, const double tip_length);

@@ -72,7 +72,7 @@ double GetTagSize(int tag_id)
     }
 }
 
-Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
+void GetMarkerTransformUsingOpenCV(const TagDetection& detection, Eigen::Matrix4d& transform, cv::Mat& rvec, cv::Mat& tvec)
 {
     // Check if fx,fy or cx,cy are not set
     if ((camera_info_.K[0] == 0.0) || (camera_info_.K[4] == 0.0) || (camera_info_.K[2] == 0.0) || (camera_info_.K[5] == 0.0))
@@ -99,10 +99,23 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
     cv::Matx33f intrinsics(camera_info_.K[0], 0, camera_info_.K[2],
                            0, camera_info_.K[4], camera_info_.K[5],
                            0, 0, 1);
-    cv::Vec4f distortion_coeff(camera_info_.D[0], camera_info_.D[1], camera_info_.D[2], camera_info_.D[3]);
     
-    cv::Mat rvec, tvec;
-    cv::solvePnP(object_pts, image_pts, intrinsics, distortion_coeff, rvec, tvec);
+    cv::Vec4f distortion_coeff(camera_info_.D[0], camera_info_.D[1], camera_info_.D[2], camera_info_.D[3]);
+
+    // Estimate 3D pose of tag
+    // Methods:
+    //   CV_ITERATIVE
+    //     Iterative method based on Levenberg-Marquardt optimization.
+    //     Finds the pose that minimizes reprojection error, being the sum of squared distances
+    //     between the observed projections (image_points) and the projected points (object_pts).
+    //   CV_P3P
+    //     Based on: Gao et al, "Complete Solution Classification for the Perspective-Three-Point Problem"
+    //     Requires exactly four object and image points.
+    //   CV_EPNP
+    //     Moreno-Noguer, Lepetit & Fua, "EPnP: Efficient Perspective-n-Point Camera Pose Estimation"
+    int method = CV_ITERATIVE;
+    bool use_extrinsic_guess = false; // only used for ITERATIVE method
+    cv::solvePnP(object_pts, image_pts, intrinsics, distortion_coeff, rvec, tvec, use_extrinsic_guess, method);
 
     cv::Matx33d r;
     cv::Rodrigues(rvec, r);
@@ -110,14 +123,14 @@ Eigen::Matrix4d GetDetectionTransform(TagDetection detection)
     rot << r(0,0), r(0,1), r(0,2),
            r(1,0), r(1,1), r(1,2),
            r(2,0), r(2,1), r(2,2);
-    
+
     Eigen::Matrix4d T;
     T.topLeftCorner(3,3) = rot;
     T.col(3).head(3) <<
             tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
     T.row(3) << 0,0,0,1;
     
-    return T;
+    transform = T;
 }
 
 // Draw a line with an arrow head
@@ -300,8 +313,11 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         {
             continue;
         }
-        
-        Eigen::Matrix4d pose = GetDetectionTransform(detections[i]);
+
+        Eigen::Matrix4d pose;
+        cv::Mat rvec;
+        cv::Mat tvec;
+        GetMarkerTransformUsingOpenCV(detections[i], pose, rvec, tvec);
         
         // Get this info from earlier code, don't extract it again
         Eigen::Matrix3d R = pose.block<3,3>(0,0);
