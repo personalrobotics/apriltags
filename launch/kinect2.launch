@@ -12,17 +12,10 @@
     <param name="~display_type" value="CUBE" />
     <param name="~marker_thickness" value="0.02" />
 
-    <rosparam command="delete" param="tag_data" />
-    <rosparam param="tag_data">
-      "1": 
-        size: 0.035
-      "2":
-        size: 0.048
-    </rosparam>
-
-    <remap from="~image" to="/camera/rgb/image_rect"/>
-    <remap from="~camera_info" to="/camera/rgb/camera_info"/>
+    <remap from="~image" to="/kinect2/hd/image_color_rect"/>
+    <remap from="~camera_info" to="/kinect2/hd/camera_info"/>
     <remap from="~marker_array" to="/apriltags/marker_array"/>
     <remap from="~detections" to="/apriltags/detections"/>
+
   </node>
 </launch>
