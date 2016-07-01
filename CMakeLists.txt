@@ -46,7 +46,7 @@ add_definitions(-frounding-math)
 # Download the external Swatbotics repository.
 include(ExternalProject)
 ExternalProject_Add(apriltags_swatbotics_EXTERNAL
-    GIT_REPOSITORY https://github.com/personalrobotics/apriltags-cpp
+    GIT_REPOSITORY https://github.com/personalrobotics/apriltags-cpp.git
     INSTALL_COMMAND ""
     BUILD_COMMAND "make" # I don't know why this works...
     CMAKE_ARGS -DCMAKE_CXX_FLAGS=-frounding-math -DBUILD_SHARED_LIBS:BOOL=ON
