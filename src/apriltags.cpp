@@ -250,14 +250,15 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
     if(!has_camera_info_){
         ROS_WARN("No Camera Info Received Yet");
-        return;
+        return; 
     }
 
     // Get the image
     cv_bridge::CvImagePtr subscribed_ptr;
     try
     {
-        subscribed_ptr = cv_bridge::toCvCopy(msg, "mono8");
+        subscribed_ptr = cv_bridge::toCvCopy(msg, "");
+        subscribed_ptr->image.convertTo(subscribed_ptr->image, CV_8UC1);
     }
     catch(cv_bridge::Exception& e)
     {
@@ -265,7 +266,16 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
     
-    cv::Mat subscribed_gray = subscribed_ptr->image;
+    cv::Mat unnormalized_subscribed_gray = subscribed_ptr->image;
+    // Rescale image values to be between 0 and 255 using the max and min
+    // value. 
+    double maxVal;
+    double minVal;
+    minMaxLoc(unnormalized_subscribed_gray, &minVal, &maxVal);
+    cv::Mat subscribed_gray;
+    //unnormalized_subscribed_gray.copyTo(subscribed_gray);
+    cv::normalize(unnormalized_subscribed_gray, subscribed_gray, 0, 255, 32, CV_8UC1);
+    
     cv::Point2d opticalCenter;
 
     if ((camera_info_.K[2] > 1.0) && (camera_info_.K[5] > 1.0))
@@ -291,7 +301,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         try
         {
-            subscribed_color_ptr = cv_bridge::toCvCopy(msg, "bgr8");
+            subscribed_color_ptr = cv_bridge::toCvCopy(msg, "");
+            subscribed_color_ptr->image.convertTo(subscribed_color_ptr->image, CV_8UC3);
         }
         catch(cv_bridge::Exception& e)
         {
@@ -324,7 +335,6 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         Eigen::Quaternion<double> q(R);
         
         double tag_size = GetTagSize(detections[i].id);
-        cout << tag_size << " " << detections[i].id << endl;
         
         // Fill in MarkerArray msg
         visualization_msgs::Marker marker_transform;
