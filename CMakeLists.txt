@@ -55,13 +55,15 @@ include_directories(
     ${apriltagscpp_INCLUDE_DIRS}
 )
 message(WARNING "!!!!!=${apriltagscpp_INCLUDE_DIRS}" )
+message(WARNING "!!!!!=${apriltagscpp_LIBRARIES}" )
+message(WARNING "!!!!!=${Yaml_LIBRARIES}" )
 
 add_executable(apriltags src/apriltags.cpp)
 target_link_libraries(apriltags ${catkin_LIBRARIES})
 target_link_libraries(apriltags ${Eigen_LIBRARIES})
 target_link_libraries(apriltags ${OpenCV_LIBRARIES})
 target_link_libraries(apriltags ${Yaml_LIBRARIES})
-target_link_libraries(apriltags apriltagscpp)
+target_link_libraries(apriltags ${apriltagscpp_LIBRARIES})
 add_dependencies(apriltags ${PROJECT_NAME}_gencpp)
 
 install(TARGETS apriltags
