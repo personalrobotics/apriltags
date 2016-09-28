@@ -54,9 +54,6 @@ include_directories(
     ${Yaml_INCLUDE_DIRS}
     ${apriltagscpp_INCLUDE_DIR}/apriltagscpp
 )
-message(WARNING "!!!!!=${apriltagscpp_INCLUDE_DIR}" )
-message(WARNING "!!!!!=${apriltagscpp_LIBRARY}" )
-message(WARNING "!!!!!=${Yaml_LIBRARIES}" )
 
 add_executable(apriltags src/apriltags.cpp)
 target_link_libraries(apriltags ${catkin_LIBRARIES}
