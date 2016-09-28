@@ -52,25 +52,25 @@ include_directories(
     ${Eigen_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
     ${Yaml_INCLUDE_DIRS}
-    ${apriltagscpp_INCLUDE_DIRS}
+    ${apriltagscpp_INCLUDE_DIR}/apriltagscpp
 )
-message(WARNING "!!!!!=${apriltagscpp_INCLUDE_DIRS}" )
-message(WARNING "!!!!!=${apriltagscpp_LIBRARIES}" )
+message(WARNING "!!!!!=${apriltagscpp_INCLUDE_DIR}" )
+message(WARNING "!!!!!=${apriltagscpp_LIBRARY}" )
 message(WARNING "!!!!!=${Yaml_LIBRARIES}" )
 
 add_executable(apriltags src/apriltags.cpp)
-target_link_libraries(apriltags ${catkin_LIBRARIES})
-target_link_libraries(apriltags ${Eigen_LIBRARIES})
-target_link_libraries(apriltags ${OpenCV_LIBRARIES})
-target_link_libraries(apriltags ${Yaml_LIBRARIES})
-target_link_libraries(apriltags ${apriltagscpp_LIBRARIES})
+target_link_libraries(apriltags ${catkin_LIBRARIES}
+                                ${Eigen_LIBRARIES}
+                                ${OpenCV_LIBRARIES}
+                                ${Yaml_LIBRARIES}    
+                                ${apriltagscpp_LIBRARY})
 add_dependencies(apriltags ${PROJECT_NAME}_gencpp)
 
 install(TARGETS apriltags
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION} 
 )
 
-install(FILES ${apriltagscpp_LIBRARIES}
-  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+#install(FILES ${apriltagscpp_LIBRARY}
+#  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#)
 
