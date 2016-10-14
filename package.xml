@@ -28,6 +28,7 @@
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>apriltagscpp</depend>
   <depend>yaml-cpp</depend>
   <exec_depend>message_runtime</exec_depend>
 </package>

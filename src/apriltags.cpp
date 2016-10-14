@@ -37,9 +37,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <opencv/highgui.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include <src/TagDetector.h>
-#include <src/TagDetection.h>
-#include <src/TagFamily.h>
+// #include <src/TagDetector.h>
+// #include <src/TagDetection.h>
+// #include <src/TagFamily.h>
+
+// #include "apriltagscpp/TagDetector.h"
+// #include "apriltagscpp/TagDetection.h"
+// #include "apriltagscpp/TagFamily.h"
+
+#include "TagDetector.h"
+#include "TagDetection.h"
+#include "TagFamily.h"
+
+
+// #include <TagDetector.h>
+// #include <TagDetection.h>
+// #include <TagFamily.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
