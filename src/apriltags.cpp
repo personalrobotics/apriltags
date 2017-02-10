@@ -69,6 +69,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "apriltags.h"
 #include <apriltags/AprilTagDetections.h>
 
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 
@@ -258,6 +260,132 @@ void InfoCallback(const sensor_msgs::CameraInfoConstPtr& camera_info)
     has_camera_info_ = true;
 }
 
+// Finds all corners in a AprilTag
+void tag2Corners(size_t id, std::vector<cv::Point2f> &points)
+{
+
+    cv::Mat tag_img = family_->makeImage(id);
+    tag_img.convertTo(tag_img, CV_8S);
+
+    size_t tag_size = tag_img.cols;
+
+    cv::Mat dx = cv::Mat::zeros(tag_size,tag_size,CV_8S);
+    cv::Mat dy = cv::Mat::zeros(tag_size,tag_size,CV_8S);
+
+    dx(cv::Rect(0,0,tag_size-1,tag_size)) = tag_img(cv::Rect(0,0,tag_size-1,tag_size)) - tag_img(cv::Rect(1,0,tag_size-1,tag_size));
+    dy(cv::Rect(0,0,tag_size,tag_size-1)) = tag_img(cv::Rect(0,0,tag_size,tag_size-1)) - tag_img(cv::Rect(0,1,tag_size,tag_size-1));
+    cv::Mat corner_img = (dy(cv::Rect(0,0,tag_size-1,tag_size-1)) != dy(cv::Rect(1,0,tag_size-1,tag_size-1))) |
+            (dx(cv::Rect(0,0,tag_size-1,tag_size-1)) != dx(cv::Rect(0,1,tag_size-1,tag_size-1)));
+
+    std::vector< cv::Point> im_points;
+    cv::findNonZero(corner_img, im_points);
+    points.resize(im_points.size());
+    for (int i = 0; i < points.size(); i++ )
+    {
+        points[i].x = (im_points[i].x)*2.0/(tag_size-2) - 1;
+        points[i].y = (im_points[i].y)*2.0/(tag_size-2) - 1;
+    }
+
+
+    cv::namedWindow( "pattern_disp", cv::WINDOW_NORMAL );
+
+    cv::Mat disp_img;
+    tag_img.convertTo(disp_img, CV_8U);
+    cv::cvtColor(disp_img, disp_img, cv::COLOR_GRAY2BGR);
+    cv::resize(disp_img, disp_img, cv::Size(0,0), 10, 10, cv::INTER_NEAREST);
+
+
+    for (int i = 0; i < points.size(); i++ )
+    {
+        circle(disp_img, cv::Point((points[i].x + 1)/2*10*(tag_size-2)+10, (points[i].y + 1)/2*10*(tag_size-2)+10), 1, cv::Scalar(0,0,255));
+    }
+
+    cv::imshow( "pattern_disp", disp_img );
+//    cv::waitKey(0);
+
+}
+
+// Callback for image data
+void refinePose(cv::Mat& image, TagDetection& detection, Eigen::Matrix4d& transform, cv::Mat& rvec, cv::Mat& tvec)
+{
+	ROS_INFO("Refine Points");
+    std::vector< cv::Point2f> target_points;
+    tag2Corners(detection.id, target_points);
+
+    std::vector< cv::Point2f> image_points(target_points.size());
+    std::vector< cv::Point3f> model_points(target_points.size());
+
+    double square_size = GetTagSize(detection.id)/8.0;
+
+    for (int i = 0; i < target_points.size(); i++ )
+    {
+        image_points[i] = detection.interpolate(target_points[i].x, -target_points[i].y);
+        model_points[i] = square_size * cv::Point3f(target_points[i].x, target_points[i].y, 0.0);
+    }
+
+    //Should proabably be variable based on tag size in image.
+    cv::Size win_size = cv::Size( 3, 3);
+    cv::Size zero_zone = cv::Size( 0, 0 );
+    cv::TermCriteria criteria = cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 40, 0.001 );
+    //cv::Mat image_gray;
+    //cv::cvtColor(image, image_gray, cv::COLOR_RGB2GRAY);
+    //cv::cornerSubPix(image, image_points, win_size, zero_zone, criteria);
+
+    cv::Matx33f intrinsics = cv::Matx33f::eye();
+    cv::Vec4f distortion_coeff = cv::Vec4f(0,0,0,0);
+
+    if(has_camera_info_)
+    {
+        intrinsics = cv::Matx33f(camera_info_.K[0], 0, camera_info_.K[2],
+                           0, camera_info_.K[4], camera_info_.K[5],
+                           0, 0, 1);
+
+        distortion_coeff = cv::Vec4f(camera_info_.D[0], camera_info_.D[1], camera_info_.D[2], camera_info_.D[3]);
+    }
+
+    solvePnPRansac(model_points, image_points, intrinsics, distortion_coeff, rvec, tvec);
+
+    cv::Matx33d r;
+    cv::Rodrigues(rvec, r);
+    Eigen::Matrix3d rot;
+    rot << r(0,0), r(0,1), r(0,2),
+           r(1,0), r(1,1), r(1,2),
+           r(2,0), r(2,1), r(2,2);
+
+    Eigen::Matrix4d T;
+    T.topLeftCorner(3,3) = rot;
+    T.col(3).head(3) << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2);
+    T.row(3) << 0,0,0,1;
+
+    transform = T;
+
+
+    //    cv::namedWindow( "disp", cv::WINDOW_NORMAL );
+//    cv::imshow("AprilTags_tests", image);
+    //cv::waitKey(0);
+
+        cv::Mat disp_img;
+        //image.copyTo(disp_img);
+        cv::cvtColor(image, disp_img, cv::COLOR_GRAY2BGR);
+
+    for (int i = 0; i < image_points.size(); i++ )
+    {
+        circle(disp_img, image_points[i], 0, cv::Scalar(0,255,0));
+    }
+        cv::Point2f corner;
+        corner = detection.interpolate(-1, -1);
+        circle(disp_img, corner, 0, cv::Scalar(255,0,255));
+        corner = detection.interpolate(-1, 1);
+        circle(disp_img, corner, 0, cv::Scalar(255,0.0));
+        corner = detection.interpolate(1, -1);
+        circle(disp_img, corner, 0, cv::Scalar(0,255,0));
+
+    cv::imshow( "disp", disp_img );
+    cv::imshow("AprilTags_tests", image);
+    cv::waitKey(1);
+}
+
+
 // Callback for image data
 void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -277,7 +405,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-    
+
     cv::Mat subscribed_gray = subscribed_ptr->image;
     cv::Point2d opticalCenter;
 
@@ -315,7 +443,8 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         if (display_marker_overlay_)
         {
             // Overlay a black&white marker for each detection
-            subscribed_color_ptr->image = family_->superimposeDetections(subscribed_color_ptr->image, detections);
+            //subscribed_color_ptr->image = family_->superimposeDetections(subscribed_color_ptr->image, detections);
+
         }
     }
 
@@ -330,8 +459,9 @@ void ImageCallback(const sensor_msgs::ImageConstPtr& msg)
         Eigen::Matrix4d pose;
         cv::Mat rvec;
         cv::Mat tvec;
-        GetMarkerTransformUsingOpenCV(detections[i], pose, rvec, tvec);
-        
+        //GetMarkerTransformUsingOpenCV(detections[i], pose, rvec, tvec);
+        refinePose(subscribed_gray, detections[i], pose, rvec, tvec);
+
         // Get this info from earlier code, don't extract it again
         Eigen::Matrix3d R = pose.block<3,3>(0,0);
         Eigen::Quaternion<double> q(R);
@@ -564,7 +694,7 @@ int main(int argc, char **argv)
     GetParameterValues();
     SetupPublisher();
     InitializeTags();
-
+    cvNamedWindow("AprilTags_tests");
     if(viewer_){
         cvNamedWindow("AprilTags");
         cvStartWindowThread();
@@ -583,3 +713,44 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
 }
+
+//int main(int argc, char **argv)
+//{
+//    tag_family_name_ = DEFAULT_TAG_FAMILY;
+//    default_tag_size_ = DEFAULT_TAG_SIZE;
+
+//    InitializeTags();
+//    cv::namedWindow("AprilTags", cv::WINDOW_NORMAL);
+
+
+//    std::vector< cv::Point2d> points;
+//    size_t id;
+
+//    cv::Mat im = cv::imread("/home/bokorn/src/apriltags_ros_tests/src/apriltags-cpp/images/iphonecam/IMG_0612.jpg");
+
+//    while (std::max(im.rows, im.cols) > 800) {
+//      cv::Mat tmp;
+//      cv::resize(im, tmp, cv::Size(0,0), 0.5, 0.5);
+//      im = tmp;
+//    }
+
+//    cv::imshow("AprilTags", im);
+//    //cv::waitKey(0);
+
+//    cv::Point2d opticalCenter = cv::Point2d(0.5*im.rows, 0.5*im.cols);
+
+//    TagDetectionArray detections;
+//    detector_->process(im, opticalCenter, detections);
+
+//    //tag2Corners(3, points);
+
+//    for(size_t i = 0; i < detections.size(); ++i)
+//    {
+//        std::cout << detections[i].id << std::endl;
+//        refinePose(im, detections[i]);
+//    }
+
+//    //Destroying Stuff
+//    delete detector_;
+//    delete family_;
+//}

@@ -66,3 +66,7 @@ void GetParameterValues();
 void SetupPublisher();
 void InitializeTags();
 void InitializeROSNode();
+
+
+void refinePose(cv::Mat& image, TagDetection& detection, Eigen::Matrix4d& transform, cv::Mat& rvec, cv::Mat& tvec);
+void tag2Corners(size_t id, std::vector<cv::Point2f> &points);
